@@ -1,0 +1,43 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:15-alpine
+    container_name: ccm_postgres
+    restart: always
+    environment:
+      POSTGRES_USER: ccm_user
+      POSTGRES_PASSWORD: ccm_password
+      POSTGRES_DB: college_club_manager
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: ccm_backend
+    restart: always
+    environment:
+      DATABASE_URL: postgresql://ccm_user:ccm_password@db:5432/college_club_manager
+      JWT_SECRET: production-secret-key-college-club-manager
+    ports:
+      - "8000:8000"
+    depends_on:
+      - db
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: ccm_frontend
+    restart: always
+    ports:
+      - "5173:5173"
+    depends_on:
+      - backend
+
+volumes:
+  pgdata:
