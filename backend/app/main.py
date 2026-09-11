@@ -11,7 +11,10 @@ from .routers import (
     event_routes,
     saved_routes,
     admin_routes,
-    ai_routes
+    ai_routes,
+    application_routes,
+    ticket_routes,
+    announcement_routes
 )
 
 @asynccontextmanager
@@ -27,9 +30,9 @@ async def lifespan(app: FastAPI):
     yield
 
 app = FastAPI(
-    title="College Club Manager API",
-    description="Backend API for College Club Manager with authentication, role-based access control, events, bookmarks, analytics, and AI assistant.",
-    version="1.0.0",
+    title="College Club Manager API — Enterprise Edition",
+    description="Backend API for College Club Manager with Auth, RBAC, Clubs, Events, In-App Applications, Recruitment Kanban, QR Event Ticketing, Gate Check-in, Newsfeed, and AI Assistant.",
+    version="2.0.0",
     lifespan=lifespan
 )
 
@@ -49,15 +52,18 @@ app.include_router(event_routes.router)
 app.include_router(saved_routes.router)
 app.include_router(admin_routes.router)
 app.include_router(ai_routes.router)
+app.include_router(application_routes.router)
+app.include_router(ticket_routes.router)
+app.include_router(announcement_routes.router)
 
 @app.get("/")
 def root():
     return {
-        "message": "Welcome to College Club Manager API",
+        "message": "Welcome to College Club Manager Enterprise API",
         "docs_url": "/docs",
-        "version": "1.0.0"
+        "version": "2.0.0"
     }
 
 @app.get("/api/health")
 def health_check():
-    return {"status": "healthy", "service": "college-club-manager-backend"}
+    return {"status": "healthy", "service": "college-club-manager-backend", "edition": "enterprise"}

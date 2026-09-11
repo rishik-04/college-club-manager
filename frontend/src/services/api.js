@@ -104,27 +104,53 @@ export const api = {
       });
       return handleResponse(res);
     },
-    addMember: async (clubId, memberData) => {
-      const res = await fetch(`${API_BASE}/clubs/${clubId}/board-members`, {
+  },
+
+  // Applications & Recruitment Kanban (Phase 26)
+  applications: {
+    apply: async (clubId, appData) => {
+      const res = await fetch(`${API_BASE}/clubs/${clubId}/apply`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           ...getAuthHeader(),
         },
-        body: JSON.stringify(memberData),
+        body: JSON.stringify(appData),
       });
       return handleResponse(res);
     },
-    deleteMember: async (clubId, memberId) => {
-      const res = await fetch(`${API_BASE}/clubs/${clubId}/board-members/${memberId}`, {
-        method: 'DELETE',
+    getMyApplications: async () => {
+      const res = await fetch(`${API_BASE}/users/me/applications`, {
         headers: { ...getAuthHeader() },
+      });
+      return handleResponse(res);
+    },
+    getClubApplications: async (clubId) => {
+      const res = await fetch(`${API_BASE}/clubs/${clubId}/applications`, {
+        headers: { ...getAuthHeader() },
+      });
+      return handleResponse(res);
+    },
+    getAllApplications: async () => {
+      const res = await fetch(`${API_BASE}/admin/applications`, {
+        headers: { ...getAuthHeader() },
+      });
+      return handleResponse(res);
+    },
+    updateStatus: async (appId, status, admin_notes = '') => {
+      const res = await fetch(`${API_BASE}/applications/${appId}/status`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          ...getAuthHeader(),
+        },
+        body: JSON.stringify({ status, admin_notes }),
       });
       return handleResponse(res);
     },
   },
 
-  // Events
+  // Events & QR Ticketing (Phase 27)
   events: {
     getAll: async ({ filter_type = 'all', club_id = null } = {}) => {
       const params = new URLSearchParams();
@@ -146,6 +172,57 @@ export const api = {
     },
     delete: async (eventId) => {
       const res = await fetch(`${API_BASE}/events/${eventId}`, {
+        method: 'DELETE',
+        headers: { ...getAuthHeader() },
+      });
+      return handleResponse(res);
+    },
+    rsvp: async (eventId) => {
+      const res = await fetch(`${API_BASE}/events/${eventId}/rsvp`, {
+        method: 'POST',
+        headers: { ...getAuthHeader() },
+      });
+      return handleResponse(res);
+    },
+    getMyTickets: async () => {
+      const res = await fetch(`${API_BASE}/users/me/tickets`, {
+        headers: { ...getAuthHeader() },
+      });
+      return handleResponse(res);
+    },
+    checkIn: async (eventId, ticket_code) => {
+      const res = await fetch(`${API_BASE}/events/${eventId}/check-in`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...getAuthHeader(),
+        },
+        body: JSON.stringify({ ticket_code }),
+      });
+      return handleResponse(res);
+    },
+  },
+
+  // Announcements Newsfeed (Phase 28)
+  announcements: {
+    getAll: async (clubId = null) => {
+      const params = clubId ? `?club_id=${clubId}` : '';
+      const res = await fetch(`${API_BASE}/announcements${params}`);
+      return handleResponse(res);
+    },
+    create: async (clubId, annData) => {
+      const res = await fetch(`${API_BASE}/clubs/${clubId}/announcements`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...getAuthHeader(),
+        },
+        body: JSON.stringify(annData),
+      });
+      return handleResponse(res);
+    },
+    delete: async (id) => {
+      const res = await fetch(`${API_BASE}/announcements/${id}`, {
         method: 'DELETE',
         headers: { ...getAuthHeader() },
       });

@@ -176,3 +176,75 @@ class AdminStats(BaseModel):
     upcoming_events: int
     top_saved_clubs: List[dict]
     category_distribution: List[dict]
+
+# Application Schemas (Phase 26)
+class ApplicationCreate(BaseModel):
+    domain: str
+    experience_level: str
+    why_join: str
+    portfolio_url: Optional[str] = None
+
+class ApplicationStatusUpdate(BaseModel):
+    status: str  # Submitted, Screening, Interview Scheduled, Offered, Joined, Rejected
+    admin_notes: Optional[str] = None
+
+class ApplicationResponse(BaseModel):
+    id: int
+    user_id: int
+    club_id: int
+    applicant_name: Optional[str] = None
+    applicant_email: Optional[str] = None
+    applicant_branch: Optional[str] = None
+    applicant_year: Optional[str] = None
+    club_name: Optional[str] = None
+    domain: str
+    experience_level: str
+    why_join: str
+    portfolio_url: Optional[str] = None
+    status: str
+    admin_notes: Optional[str] = None
+    created_at: datetime.datetime
+
+    class Config:
+        from_attributes = True
+
+# Ticket / Event Registration Schemas (Phase 27)
+class TicketResponse(BaseModel):
+    id: int
+    user_id: int
+    event_id: int
+    event_title: str
+    club_name: str
+    event_date: datetime.datetime
+    location: str
+    ticket_code: str
+    status: str
+    checked_in_at: Optional[datetime.datetime] = None
+    created_at: datetime.datetime
+
+    class Config:
+        from_attributes = True
+
+class CheckInRequest(BaseModel):
+    ticket_code: str
+
+# Announcement Schemas (Phase 28)
+class AnnouncementCreate(BaseModel):
+    title: str
+    content: str
+    category: Optional[str] = "General"
+    is_pinned: Optional[bool] = False
+
+class AnnouncementResponse(BaseModel):
+    id: int
+    club_id: int
+    club_name: str
+    club_logo: Optional[str] = None
+    title: str
+    content: str
+    category: str
+    is_pinned: bool
+    created_at: datetime.datetime
+
+    class Config:
+        from_attributes = True

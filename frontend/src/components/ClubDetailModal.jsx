@@ -10,10 +10,9 @@ import {
   Instagram, 
   Linkedin, 
   Globe, 
-  Mail, 
-  MapPin, 
   Clock,
-  Briefcase
+  MapPin,
+  Send
 } from 'lucide-react';
 import { api } from '../services/api';
 
@@ -22,11 +21,12 @@ export default function ClubDetailModal({
   onClose,
   onToggleSave,
   isSaved: initialIsSaved,
-  savedCount: initialSavedCount
+  savedCount: initialSavedCount,
+  onOpenApply
 }) {
   const [club, setClub] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [activeSubTab, setActiveSubTab] = useState('overview'); // overview, members, events
+  const [activeSubTab, setActiveSubTab] = useState('overview');
   const [isSaved, setIsSaved] = useState(initialIsSaved);
   const [savedCount, setSavedCount] = useState(initialSavedCount);
 
@@ -61,7 +61,6 @@ export default function ClubDetailModal({
         className="bg-white w-full max-w-3xl min-h-screen sm:min-h-0 sm:rounded-3xl shadow-2xl overflow-hidden flex flex-col my-auto border border-slate-200 relative animate-in zoom-in-95 duration-200"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Close Button */}
         <button
           onClick={onClose}
           className="absolute top-4 right-4 z-20 p-2 rounded-full bg-black/40 hover:bg-black/60 text-white backdrop-blur-md transition"
@@ -85,7 +84,6 @@ export default function ClubDetailModal({
               />
               <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-slate-950/30 to-transparent"></div>
 
-              {/* Bookmark on Hero */}
               <button
                 onClick={handleSaveClick}
                 className={`absolute bottom-4 right-4 z-10 flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold backdrop-blur-md transition ${
@@ -119,7 +117,6 @@ export default function ClubDetailModal({
                   </div>
                 </div>
 
-                {/* Social Links */}
                 <div className="flex items-center gap-2">
                   {club.website_url && (
                     <a
@@ -204,7 +201,6 @@ export default function ClubDetailModal({
             <div className="p-6 sm:p-8 space-y-6 max-h-[55vh] overflow-y-auto">
               {activeSubTab === 'overview' && (
                 <div className="space-y-6">
-                  {/* About Section */}
                   <div>
                     <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">
                       About the Club
@@ -214,9 +210,7 @@ export default function ClubDetailModal({
                     </p>
                   </div>
 
-                  {/* Grid: Who Can Apply & What You'll Gain */}
                   <div className="grid sm:grid-cols-2 gap-4">
-                    {/* Eligibility */}
                     <div className="p-4 rounded-2xl bg-amber-50/70 border border-amber-200/60">
                       <div className="flex items-center gap-2 text-amber-800 font-bold text-sm mb-2">
                         <CheckCircle2 className="w-4 h-4 text-amber-600" />
@@ -227,7 +221,6 @@ export default function ClubDetailModal({
                       </p>
                     </div>
 
-                    {/* Outcomes */}
                     <div className="p-4 rounded-2xl bg-sky-50/70 border border-sky-200/60">
                       <div className="flex items-center gap-2 text-sky-800 font-bold text-sm mb-2">
                         <Sparkles className="w-4 h-4 text-sky-600" />
@@ -282,7 +275,6 @@ export default function ClubDetailModal({
 
               {activeSubTab === 'events' && (
                 <div className="space-y-6">
-                  {/* Upcoming Events */}
                   <div>
                     <h4 className="text-xs font-bold text-emerald-700 uppercase tracking-wider mb-3 flex items-center gap-1.5">
                       <Clock className="w-3.5 h-3.5" /> Upcoming Events ({club.upcoming_events?.length || 0})
@@ -310,44 +302,6 @@ export default function ClubDetailModal({
                                 <MapPin className="w-3.5 h-3.5 text-slate-400" /> {ev.location}
                               </span>
                             </div>
-                            {ev.registration_url && (
-                              <a
-                                href={ev.registration_url}
-                                target="_blank"
-                                rel="noreferrer"
-                                className="shrink-0 px-3.5 py-1.5 rounded-xl text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 transition flex items-center justify-center gap-1 shadow-sm"
-                              >
-                                Register
-                                <ExternalLink className="w-3 h-3" />
-                              </a>
-                            )}
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Past Events */}
-                  <div>
-                    <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">
-                      Past Events ({club.past_events?.length || 0})
-                    </h4>
-                    {club.past_events?.length === 0 ? (
-                      <p className="text-xs text-slate-400 italic">No past events recorded.</p>
-                    ) : (
-                      <div className="space-y-2">
-                        {club.past_events.map((ev) => (
-                          <div
-                            key={ev.id}
-                            className="p-3.5 rounded-xl bg-slate-50 border border-slate-200 text-xs flex items-center justify-between gap-2"
-                          >
-                            <div>
-                              <span className="font-semibold text-slate-800">{ev.title}</span>
-                              <p className="text-slate-500 text-[11px] line-clamp-1">{ev.description}</p>
-                            </div>
-                            <span className="text-slate-400 shrink-0">
-                              {new Date(ev.event_date).toLocaleDateString(undefined, { month: 'short', year: 'numeric' })}
-                            </span>
                           </div>
                         ))}
                       </div>
@@ -357,22 +311,34 @@ export default function ClubDetailModal({
               )}
             </div>
 
-            {/* Sticky Bottom Bar with Apply Now (Google Form) */}
-            <div className="p-4 sm:p-5 bg-slate-50 border-t border-slate-200 flex items-center justify-between gap-4">
+            {/* Sticky Bottom Bar with Native Apply + Google Form Link */}
+            <div className="p-4 sm:p-5 bg-slate-50 border-t border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-3">
               <div className="text-xs text-slate-500 hidden sm:block">
-                Ready to join <strong className="text-slate-800">{club.name}</strong>?
-                <p className="text-[11px] text-slate-400">Applications are reviewed through their official Google Form.</p>
+                Apply directly to <strong className="text-slate-800">{club.name}</strong>
               </div>
 
-              <a
-                href={club.google_form_url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="w-full sm:w-auto px-8 py-3 rounded-2xl text-sm font-bold text-white bg-emerald-600 hover:bg-emerald-700 active:scale-95 transition shadow-lg shadow-emerald-600/25 flex items-center justify-center gap-2"
-              >
-                APPLY NOW
-                <ExternalLink className="w-4 h-4" />
-              </a>
+              <div className="flex items-center gap-2 w-full sm:w-auto">
+                <button
+                  onClick={() => {
+                    onClose();
+                    onOpenApply(club);
+                  }}
+                  className="flex-1 sm:flex-none px-6 py-3 rounded-2xl text-xs font-extrabold text-white bg-emerald-600 hover:bg-emerald-700 active:scale-95 transition shadow-lg shadow-emerald-600/25 flex items-center justify-center gap-2"
+                >
+                  <Send className="w-4 h-4" />
+                  APPLY NOW (IN-APP)
+                </button>
+                <a
+                  href={club.google_form_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="px-3.5 py-3 rounded-2xl text-xs font-semibold text-slate-600 bg-white border border-slate-200 hover:bg-slate-100 transition flex items-center justify-center gap-1"
+                  title="Google Form Mirror"
+                >
+                  Google Form
+                  <ExternalLink className="w-3 h-3 text-slate-400" />
+                </a>
+              </div>
             </div>
           </>
         )}

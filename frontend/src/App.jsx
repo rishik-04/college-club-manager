@@ -9,6 +9,9 @@ import AuthModal from './components/AuthModal';
 import AskClubAssistant from './components/AskClubAssistant';
 import RecommendationModal from './components/RecommendationModal';
 import AdminDashboard from './components/AdminDashboard';
+import ApplicationModal from './components/ApplicationModal';
+import KanbanBoard from './components/KanbanBoard';
+import CampusFeed from './components/CampusFeed';
 
 import ExplorePage from './pages/ExplorePage';
 import EventsPage from './pages/EventsPage';
@@ -19,8 +22,9 @@ export default function App() {
   const { user } = useAuth();
 
   // Navigation & Modals
-  const [activeTab, setActiveTab] = useState('explore'); // explore, events, saved, match, admin, profile
+  const [activeTab, setActiveTab] = useState('explore'); // explore, feed, events, saved, match, kanban, admin, profile
   const [selectedClubId, setSelectedClubId] = useState(null);
+  const [applyingClub, setApplyingClub] = useState(null);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [isAssistantOpen, setIsAssistantOpen] = useState(false);
 
@@ -41,7 +45,6 @@ export default function App() {
     }, 3500);
   };
 
-  // Fetch Clubs whenever search or category changes
   useEffect(() => {
     loadClubs();
   }, [search, selectedCategory, user]);
@@ -69,7 +72,6 @@ export default function App() {
 
     const isCurrentlySaved = savedClubIds.has(clubId);
 
-    // Optimistic UI update
     setSavedClubIds((prev) => {
       const next = new Set(prev);
       if (isCurrentlySaved) next.delete(clubId);
@@ -100,7 +102,6 @@ export default function App() {
       }
     } catch (err) {
       showToast(err.message, 'error');
-      // Revert if failed
       loadClubs();
     }
   };
@@ -116,7 +117,7 @@ export default function App() {
         onOpenAssistant={() => setIsAssistantOpen(true)}
       />
 
-      {/* Main Content View */}
+      {/* Main View */}
       <main className="flex-1 py-8 px-4 sm:px-6 lg:px-8">
         {activeTab === 'explore' && (
           <ExplorePage
@@ -132,11 +133,17 @@ export default function App() {
           />
         )}
 
+        {activeTab === 'feed' && (
+          <CampusFeed
+            onShowToast={showToast}
+            onSelectClub={(id) => setSelectedClubId(id)}
+          />
+        )}
+
         {activeTab === 'events' && (
           <EventsPage
-            onSelectClub={(id) => {
-              setSelectedClubId(id);
-            }}
+            onSelectClub={(id) => setSelectedClubId(id)}
+            onShowToast={showToast}
           />
         )}
 
@@ -156,6 +163,10 @@ export default function App() {
           />
         )}
 
+        {activeTab === 'kanban' && (
+          <KanbanBoard onShowToast={showToast} />
+        )}
+
         {activeTab === 'admin' && (
           <AdminDashboard
             onShowToast={showToast}
@@ -171,10 +182,10 @@ export default function App() {
       {/* Footer */}
       <footer className="mt-auto border-t border-slate-200 bg-white py-6 text-center text-xs text-slate-500">
         <p className="font-semibold text-slate-700">
-          College Club Manager — 2026 Campus Ecosystem
+          College Club Manager Enterprise Platform — 2026 Edition
         </p>
         <p className="text-slate-400 mt-1">
-          FastAPI • SQLAlchemy • React • Tailwind CSS • Content-based Match & RAG Assistant
+          FastAPI • SQLAlchemy • React • Recruitment Kanban • Dynamic QR Passes • Newsfeed
         </p>
       </footer>
 
@@ -186,6 +197,16 @@ export default function App() {
           onToggleSave={handleToggleSave}
           isSaved={savedClubIds.has(selectedClubId)}
           savedCount={clubs.find((c) => c.id === selectedClubId)?.saved_count || 0}
+          onOpenApply={(club) => setApplyingClub(club)}
+        />
+      )}
+
+      {applyingClub && (
+        <ApplicationModal
+          club={applyingClub}
+          isOpen={true}
+          onClose={() => setApplyingClub(null)}
+          onShowToast={showToast}
         />
       )}
 
@@ -201,7 +222,7 @@ export default function App() {
         onSelectClub={(id) => setSelectedClubId(id)}
       />
 
-      {/* Floating Ask Assistant Launcher for Student Convenience */}
+      {/* Floating Ask Advisor Button */}
       <button
         onClick={() => setIsAssistantOpen(true)}
         className="fixed bottom-6 left-6 z-40 px-4 py-2.5 rounded-full bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold shadow-xl flex items-center gap-2 border border-slate-700 hover:scale-105 active:scale-95 transition"
@@ -210,7 +231,6 @@ export default function App() {
         Ask Club Advisor
       </button>
 
-      {/* Toast Notification */}
       <Toast
         message={toast.message}
         type={toast.type}
