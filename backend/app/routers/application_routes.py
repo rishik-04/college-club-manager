@@ -35,10 +35,16 @@ def apply_to_club(
     new_app = Application(
         user_id=current_user.id,
         club_id=club_id,
-        domain=app_in.domain,
-        experience_level=app_in.experience_level,
+        name=app_in.name,
+        roll_no=app_in.roll_no,
+        branch=app_in.branch,
+        mobile_no=app_in.mobile_no,
+        whatsapp_no=app_in.whatsapp_no,
+        college_email=app_in.college_email,
+        personal_email=app_in.personal_email,
         why_join=app_in.why_join,
-        portfolio_url=app_in.portfolio_url,
+        tshirt_size=app_in.tshirt_size,
+        payment_utr=app_in.payment_utr,
         status="Submitted",
         created_at=datetime.datetime.utcnow()
     )
@@ -50,15 +56,18 @@ def apply_to_club(
         id=new_app.id,
         user_id=new_app.user_id,
         club_id=new_app.club_id,
-        applicant_name=current_user.name,
-        applicant_email=current_user.email,
-        applicant_branch=current_user.branch,
-        applicant_year=current_user.year,
         club_name=club.name,
-        domain=new_app.domain,
-        experience_level=new_app.experience_level,
+        name=new_app.name,
+        roll_no=new_app.roll_no,
+        branch=new_app.branch,
+        mobile_no=new_app.mobile_no,
+        whatsapp_no=new_app.whatsapp_no,
+        college_email=new_app.college_email,
+        personal_email=new_app.personal_email,
         why_join=new_app.why_join,
-        portfolio_url=new_app.portfolio_url,
+        tshirt_size=new_app.tshirt_size,
+        payment_utr=new_app.payment_utr,
+        payment_proof_url=new_app.payment_proof_url,
         status=new_app.status,
         admin_notes=new_app.admin_notes,
         created_at=new_app.created_at
@@ -78,15 +87,18 @@ def get_my_applications(
                 id=a.id,
                 user_id=a.user_id,
                 club_id=a.club_id,
-                applicant_name=current_user.name,
-                applicant_email=current_user.email,
-                applicant_branch=current_user.branch,
-                applicant_year=current_user.year,
                 club_name=club.name if club else "Unknown Club",
-                domain=a.domain,
-                experience_level=a.experience_level,
+                name=a.name,
+                roll_no=a.roll_no,
+                branch=a.branch,
+                mobile_no=a.mobile_no,
+                whatsapp_no=a.whatsapp_no,
+                college_email=a.college_email,
+                personal_email=a.personal_email,
                 why_join=a.why_join,
-                portfolio_url=a.portfolio_url,
+                tshirt_size=a.tshirt_size,
+                payment_utr=a.payment_utr,
+                payment_proof_url=a.payment_proof_url,
                 status=a.status,
                 admin_notes=a.admin_notes,
                 created_at=a.created_at
@@ -107,21 +119,23 @@ def get_club_applications(
     apps = db.query(Application).filter(Application.club_id == club_id).order_by(Application.created_at.desc()).all()
     results = []
     for a in apps:
-        user = db.query(User).filter(User.id == a.user_id).first()
         results.append(
             ApplicationResponse(
                 id=a.id,
                 user_id=a.user_id,
                 club_id=a.club_id,
-                applicant_name=user.name if user else "Student",
-                applicant_email=user.email if user else "",
-                applicant_branch=user.branch if user else "",
-                applicant_year=user.year if user else "",
                 club_name=club.name,
-                domain=a.domain,
-                experience_level=a.experience_level,
+                name=a.name,
+                roll_no=a.roll_no,
+                branch=a.branch,
+                mobile_no=a.mobile_no,
+                whatsapp_no=a.whatsapp_no,
+                college_email=a.college_email,
+                personal_email=a.personal_email,
                 why_join=a.why_join,
-                portfolio_url=a.portfolio_url,
+                tshirt_size=a.tshirt_size,
+                payment_utr=a.payment_utr,
+                payment_proof_url=a.payment_proof_url,
                 status=a.status,
                 admin_notes=a.admin_notes,
                 created_at=a.created_at
@@ -137,22 +151,24 @@ def get_all_applications(
     apps = db.query(Application).order_by(Application.created_at.desc()).all()
     results = []
     for a in apps:
-        user = db.query(User).filter(User.id == a.user_id).first()
         club = db.query(Club).filter(Club.id == a.club_id).first()
         results.append(
             ApplicationResponse(
                 id=a.id,
                 user_id=a.user_id,
                 club_id=a.club_id,
-                applicant_name=user.name if user else "Student",
-                applicant_email=user.email if user else "",
-                applicant_branch=user.branch if user else "",
-                applicant_year=user.year if user else "",
                 club_name=club.name if club else "Club",
-                domain=a.domain,
-                experience_level=a.experience_level,
+                name=a.name,
+                roll_no=a.roll_no,
+                branch=a.branch,
+                mobile_no=a.mobile_no,
+                whatsapp_no=a.whatsapp_no,
+                college_email=a.college_email,
+                personal_email=a.personal_email,
                 why_join=a.why_join,
-                portfolio_url=a.portfolio_url,
+                tshirt_size=a.tshirt_size,
+                payment_utr=a.payment_utr,
+                payment_proof_url=a.payment_proof_url,
                 status=a.status,
                 admin_notes=a.admin_notes,
                 created_at=a.created_at
@@ -183,22 +199,24 @@ def update_application_status(
     db.commit()
     db.refresh(app_obj)
 
-    user = db.query(User).filter(User.id == app_obj.user_id).first()
     club = db.query(Club).filter(Club.id == app_obj.club_id).first()
 
     return ApplicationResponse(
         id=app_obj.id,
         user_id=app_obj.user_id,
         club_id=app_obj.club_id,
-        applicant_name=user.name if user else "Student",
-        applicant_email=user.email if user else "",
-        applicant_branch=user.branch if user else "",
-        applicant_year=user.year if user else "",
         club_name=club.name if club else "Club",
-        domain=app_obj.domain,
-        experience_level=app_obj.experience_level,
+        name=app_obj.name,
+        roll_no=app_obj.roll_no,
+        branch=app_obj.branch,
+        mobile_no=app_obj.mobile_no,
+        whatsapp_no=app_obj.whatsapp_no,
+        college_email=app_obj.college_email,
+        personal_email=app_obj.personal_email,
         why_join=app_obj.why_join,
-        portfolio_url=app_obj.portfolio_url,
+        tshirt_size=app_obj.tshirt_size,
+        payment_utr=app_obj.payment_utr,
+        payment_proof_url=app_obj.payment_proof_url,
         status=app_obj.status,
         admin_notes=app_obj.admin_notes,
         created_at=app_obj.created_at

@@ -90,10 +90,21 @@ class Application(Base):
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     club_id = Column(Integer, ForeignKey("clubs.id"), nullable=False)
-    domain = Column(String(100), nullable=False)  # e.g. Technical, Design, Public Relations, Operations
-    experience_level = Column(String(50), nullable=False)  # Beginner, Intermediate, Advanced
+
+    # Detailed Unified Form Fields
+    name = Column(String(120), nullable=False)
+    roll_no = Column(String(50), nullable=False)
+    branch = Column(String(100), nullable=False)
+    mobile_no = Column(String(20), nullable=False)
+    whatsapp_no = Column(String(20), nullable=False)
+    college_email = Column(String(150), nullable=False)
+    personal_email = Column(String(150), nullable=False)
+
     why_join = Column(Text, nullable=False)
-    portfolio_url = Column(String(500), nullable=True)
+    tshirt_size = Column(String(20), nullable=False, default="L")  # S, M, L, XL, XXL
+    payment_utr = Column(String(100), nullable=True)
+    payment_proof_url = Column(String(500), nullable=True)
+
     status = Column(String(50), default="Submitted", nullable=False)  # Submitted, Screening, Interview Scheduled, Offered, Joined, Rejected
     admin_notes = Column(Text, nullable=True)
     created_at = Column(DateTime, default=datetime.datetime.utcnow)
@@ -109,7 +120,7 @@ class Ticket(Base):
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     event_id = Column(Integer, ForeignKey("events.id"), nullable=False)
     ticket_code = Column(String(100), unique=True, index=True, nullable=False)
-    status = Column(String(50), default="REGISTERED", nullable=False)  # REGISTERED, CHECKED_IN, CANCELLED
+    status = Column(String(50), default="REGISTERED", nullable=False)
     checked_in_at = Column(DateTime, nullable=True)
     created_at = Column(DateTime, default=datetime.datetime.utcnow)
 
@@ -123,7 +134,7 @@ class Announcement(Base):
     club_id = Column(Integer, ForeignKey("clubs.id"), nullable=False)
     title = Column(String(200), nullable=False)
     content = Column(Text, nullable=False)
-    category = Column(String(50), default="General")  # Recruitment, Event, Urgent, General
+    category = Column(String(50), default="General")
     is_pinned = Column(Boolean, default=False)
     created_at = Column(DateTime, default=datetime.datetime.utcnow)
 

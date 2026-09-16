@@ -4,11 +4,10 @@ from .models import User, Club, BoardMember, Event, SavedClub, Application, Tick
 from .auth import hash_password
 
 def seed_database(db: Session):
-    # Check if already seeded
     if db.query(Club).count() > 0:
         return
 
-    print("Seeding College Club Manager database with Enterprise data...")
+    print("Seeding College Club Manager database with Enterprise & Unified Form data...")
 
     # 1. Seed Users
     student_user = User(
@@ -60,8 +59,7 @@ def seed_database(db: Session):
             "website_url": "https://aiclub.college.edu",
             "board_members": [
                 {"name": "Aarav Sharma", "position": "President", "photo_url": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80"},
-                {"name": "Sophia Martinez", "position": "Vice President & Research Lead", "photo_url": "https://images.unsplash.com/photo-1517841905240-472988babdf9?w=150&auto=format&fit=crop&q=80"},
-                {"name": "Rohan Verma", "position": "Technical Head", "photo_url": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80"}
+                {"name": "Sophia Martinez", "position": "Vice President & Research Lead", "photo_url": "https://images.unsplash.com/photo-1517841905240-472988babdf9?w=150&auto=format&fit=crop&q=80"}
             ],
             "events": [
                 {
@@ -72,15 +70,6 @@ def seed_database(db: Session):
                     "image_url": "https://images.unsplash.com/photo-1677442136019-21780efad99a?w=600&auto=format&fit=crop&q=80",
                     "is_past": False,
                     "registration_url": "https://forms.google.com/bootcamp-reg"
-                },
-                {
-                    "title": "Annual Campus Datathon 2025",
-                    "description": "Over 200 participants competed over 24 hours to solve real-world healthcare and environmental vision problems.",
-                    "event_date": now - datetime.timedelta(days=45),
-                    "location": "Central Computing Lab",
-                    "image_url": "https://images.unsplash.com/photo-1504384308090-c894fdcc538d?w=600&auto=format&fit=crop&q=80",
-                    "is_past": True,
-                    "registration_url": None
                 }
             ]
         },
@@ -97,19 +86,69 @@ def seed_database(db: Session):
             "linkedin_url": "https://linkedin.com/company/college-devguild",
             "website_url": "https://devguild.college.edu",
             "board_members": [
-                {"name": "Liam Patel", "position": "Guild Lead", "photo_url": "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&auto=format&fit=crop&q=80"},
-                {"name": "Elena Rostova", "position": "Frontend Lead", "photo_url": "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&auto=format&fit=crop&q=80"},
-                {"name": "David Kim", "position": "Cloud & DevOps Lead", "photo_url": "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&auto=format&fit=crop&q=80"}
+                {"name": "Liam Patel", "position": "Guild Lead", "photo_url": "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&auto=format&fit=crop&q=80"}
             ],
             "events": [
                 {
                     "title": "HackWinter 48h Sprint",
-                    "description": "Our premier flagship hackathon with $5,000+ in sponsor prizes, mentorship from FAANG alumni, and free pizza!",
+                    "description": "Our premier flagship hackathon with $5,000+ in sponsor prizes and FAANG mentorship!",
                     "event_date": now + datetime.timedelta(days=22),
-                    "location": "Innovation Hub & Student Center",
+                    "location": "Innovation Hub",
                     "image_url": "https://images.unsplash.com/photo-1531482615713-2afd69097998?w=600&auto=format&fit=crop&q=80",
                     "is_past": False,
                     "registration_url": "https://forms.google.com/hackwinter-reg"
+                }
+            ]
+        },
+        {
+            "name": "The Infinitix Club",
+            "category": "Technical",
+            "description": "Innovated by the Data Science (DS) Department at Sreenidhi Institute of Science and Technology. Guided by our motto 'Igniting Insights from Data', we bridge academic learning and industry innovation through flagship hackathons, data analytics projects, and hands-on technical workshops.",
+            "eligibility": "Open to all students across all branches and years interested in Data Science, Machine Learning, Artificial Intelligence, and Data Analytics.",
+            "outcomes": "Gain hands-on expertise in Data Science pipelines, participate in flagship hackathons (AVINYA '25, HACK THE MATRIX), build real-world data applications, and collaborate with leading industry experts.",
+            "logo_url": "/infinitix_logo.jpg",
+            "cover_url": "https://images.unsplash.com/photo-1504868584819-f8e8b4b6d7e3?w=1000&auto=format&fit=crop&q=80",
+            "google_form_url": "https://forms.google.com/infinitix-club-application",
+            "instagram_url": "https://instagram.com/infinitix_club",
+            "linkedin_url": "https://linkedin.com/in/infinitix-club-snist",
+            "website_url": "https://infinitix.snist.edu.in",
+            "board_members": [
+                {"name": "Kaushik Surapalli", "position": "President", "photo_url": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80"},
+                {"name": "Dheeraj Reddy", "position": "General Secretary", "photo_url": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80"},
+                {"name": "Amulya", "position": "Public Relations", "photo_url": "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&auto=format&fit=crop&q=80"},
+                {"name": "Uttej Mekala", "position": "Documentation Head", "photo_url": "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&auto=format&fit=crop&q=80"},
+                {"name": "G Sai Bharath", "position": "Organizing Head", "photo_url": "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&auto=format&fit=crop&q=80"},
+                {"name": "Chandradeep", "position": "Designing Head", "photo_url": "https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=150&auto=format&fit=crop&q=80"},
+                {"name": "Akshay D", "position": "Publicity Head", "photo_url": "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=150&auto=format&fit=crop&q=80"},
+                {"name": "Devi Kanukula", "position": "Marketing Head", "photo_url": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80"}
+            ],
+            "events": [
+                {
+                    "title": "Major Project Expo 2025",
+                    "description": "Annual flagship exhibition showcasing innovative senior data science, machine learning, and AI projects.",
+                    "event_date": now - datetime.timedelta(days=60),
+                    "location": "DS Department Main Auditorium",
+                    "image_url": "https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=600&auto=format&fit=crop&q=80",
+                    "is_past": True,
+                    "registration_url": "https://forms.google.com/infinitix-expo-2025"
+                },
+                {
+                    "title": "Department Level Hackathon AVINYA 25",
+                    "description": "Intense 24-hour department-level hackathon solving real-world challenges in data analytics and predictive modeling.",
+                    "event_date": now - datetime.timedelta(days=30),
+                    "location": "DS Innovation Lab & Seminar Hall",
+                    "image_url": "https://images.unsplash.com/photo-1504384308090-c894fdcc538d?w=600&auto=format&fit=crop&q=80",
+                    "is_past": True,
+                    "registration_url": "https://forms.google.com/avinya-25"
+                },
+                {
+                    "title": "HACK THE MATRIX Hackathon",
+                    "description": "Upcoming national-level hackathon empowering participants to hack problems using AI, Big Data, and Cyber Systems.",
+                    "event_date": now + datetime.timedelta(days=18),
+                    "location": "Campus Central Auditorium & Virtual",
+                    "image_url": "https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?w=600&auto=format&fit=crop&q=80",
+                    "is_past": False,
+                    "registration_url": "https://forms.google.com/hack-the-matrix"
                 }
             ]
         }
@@ -133,7 +172,6 @@ def seed_database(db: Session):
 
     db.commit()
 
-    # Pre-seed saved clubs, sample applications, sample tickets, sample announcements
     ai_club = db.query(Club).filter(Club.name == "AI & Machine Learning Club").first()
     web_club = db.query(Club).filter(Club.name == "Full-Stack Web & Mobile Guild").first()
     first_event = db.query(Event).first()
@@ -141,25 +179,29 @@ def seed_database(db: Session):
     if ai_club and student_user:
         db.add(SavedClub(user_id=student_user.id, club_id=ai_club.id))
 
-        # Sample Application
         app1 = Application(
             user_id=student_user.id,
             club_id=ai_club.id,
-            domain="Technical / Machine Learning",
-            experience_level="Intermediate",
+            name="Alex Rivera",
+            roll_no="2101A0501",
+            branch="Computer Science & Engineering",
+            mobile_no="+91 98765 43210",
+            whatsapp_no="+91 98765 43210",
+            college_email="student@college.edu",
+            personal_email="alex.rivera.dev@gmail.com",
             why_join="I want to contribute to the open-source LLM research project and mentor junior students.",
-            portfolio_url="https://github.com/alexrivera-ai",
+            tshirt_size="L",
+            payment_utr="UPI/329482019482",
             status="Screening",
-            admin_notes="Strong GitHub portfolio. Scheduled for technical interview on Friday.",
+            admin_notes="Payment verified (UTR: 329482019482). Scheduled for technical interview.",
             created_at=now - datetime.timedelta(days=2)
         )
         db.add(app1)
 
-        # Sample Announcement
         ann1 = Announcement(
             club_id=ai_club.id,
             title="🔥 Spring Recruitment Auditions Announced!",
-            content="We are officially opening applications for Technical Leads, Project Managers, and Research Fellows. Deadline to submit your in-app application is October 15th!",
+            content="We are officially opening applications for Technical Leads and Research Fellows. Fill the unified form and verify your UPI payment UTR for official club kit distribution!",
             category="Recruitment",
             is_pinned=True,
             created_at=now - datetime.timedelta(hours=5)
@@ -178,7 +220,6 @@ def seed_database(db: Session):
         db.add(ann2)
 
     if first_event and student_user:
-        # Sample Ticket
         t1 = Ticket(
             user_id=student_user.id,
             event_id=first_event.id,
@@ -189,4 +230,4 @@ def seed_database(db: Session):
         db.add(t1)
 
     db.commit()
-    print("Enterprise database seeding completed successfully!")
+    print("Database seeding completed with unified form & payment data!")

@@ -43,10 +43,19 @@ def get_clubs(
             s.club_id for s in db.query(SavedClub.club_id).filter(SavedClub.user_id == current_user.id).all()
         }
 
+    now = datetime.datetime.utcnow()
     results = []
     for c in clubs:
         saved_count = db.query(SavedClub).filter(SavedClub.club_id == c.id).count()
         events_count = db.query(Event).filter(Event.club_id == c.id).count()
+        
+        # Next upcoming event teaser
+        next_ev = db.query(Event).filter(
+            Event.club_id == c.id, 
+            Event.is_past == False,
+            Event.event_date >= now
+        ).order_by(Event.event_date.asc()).first()
+
         results.append(
             ClubListResponse(
                 id=c.id,
@@ -58,7 +67,9 @@ def get_clubs(
                 google_form_url=c.google_form_url,
                 saved_count=saved_count,
                 is_saved=(c.id in saved_club_ids),
-                events_count=events_count
+                events_count=events_count,
+                next_event_title=next_ev.title if next_ev else None,
+                next_event_date=next_ev.event_date if next_ev else None
             )
         )
 

@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { 
   X, 
-  Heart, 
+  Bookmark, 
+  BookmarkCheck,
+  ArrowLeft,
   ExternalLink, 
   Users, 
   Calendar, 
@@ -12,7 +14,11 @@ import {
   Globe, 
   Clock,
   MapPin,
-  Send
+  Send,
+  Brain,
+  Code,
+  Trophy,
+  Award
 } from 'lucide-react';
 import { api } from '../services/api';
 
@@ -61,6 +67,15 @@ export default function ClubDetailModal({
         className="bg-white w-full max-w-3xl min-h-screen sm:min-h-0 sm:rounded-3xl shadow-2xl overflow-hidden flex flex-col my-auto border border-slate-200 relative animate-in zoom-in-95 duration-200"
         onClick={(e) => e.stopPropagation()}
       >
+        {/* Back Button */}
+        <button
+          onClick={onClose}
+          className="absolute top-4 left-4 z-20 flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-black/40 hover:bg-black/60 text-white backdrop-blur-md text-xs font-bold transition"
+        >
+          <ArrowLeft className="w-4 h-4" />
+          <span>Back to Clubs</span>
+        </button>
+
         <button
           onClick={onClose}
           className="absolute top-4 right-4 z-20 p-2 rounded-full bg-black/40 hover:bg-black/60 text-white backdrop-blur-md transition"
@@ -88,11 +103,11 @@ export default function ClubDetailModal({
                 onClick={handleSaveClick}
                 className={`absolute bottom-4 right-4 z-10 flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold backdrop-blur-md transition ${
                   isSaved
-                    ? 'bg-rose-500 text-white shadow-lg shadow-rose-500/30'
+                    ? 'bg-sky-500 text-white shadow-lg shadow-sky-500/30'
                     : 'bg-white/90 text-slate-800 hover:bg-white'
                 }`}
               >
-                <Heart className={`w-4 h-4 ${isSaved ? 'fill-current' : ''}`} />
+                {isSaved ? <BookmarkCheck className="w-4 h-4" /> : <Bookmark className="w-4 h-4" />}
                 <span>{isSaved ? 'Saved' : 'Save Club'}</span>
                 <span className="opacity-70 font-normal">({savedCount})</span>
               </button>
@@ -210,6 +225,38 @@ export default function ClubDetailModal({
                     </p>
                   </div>
 
+                  {/* Visual Why Join Grid */}
+                  <div>
+                    <h4 className="text-xs font-extrabold text-slate-900 uppercase tracking-wider mb-3">
+                      WHY JOIN {club.name.toUpperCase()}?
+                    </h4>
+                    <div className="grid grid-cols-3 gap-3">
+                      <div className="p-3.5 rounded-2xl bg-sky-50 border border-sky-100 text-center space-y-1">
+                        <div className="w-8 h-8 rounded-xl bg-sky-500 text-white flex items-center justify-center mx-auto shadow-sm">
+                          <Brain className="w-4 h-4" />
+                        </div>
+                        <h5 className="text-xs font-extrabold text-sky-950">Learn & Upskill</h5>
+                        <p className="text-[11px] text-sky-700/80 leading-tight">Master hands-on industry skills</p>
+                      </div>
+
+                      <div className="p-3.5 rounded-2xl bg-indigo-50 border border-indigo-100 text-center space-y-1">
+                        <div className="w-8 h-8 rounded-xl bg-indigo-500 text-white flex items-center justify-center mx-auto shadow-sm">
+                          <Code className="w-4 h-4" />
+                        </div>
+                        <h5 className="text-xs font-extrabold text-indigo-950">Build Projects</h5>
+                        <p className="text-[11px] text-indigo-700/80 leading-tight">Ship real portfolio software</p>
+                      </div>
+
+                      <div className="p-3.5 rounded-2xl bg-emerald-50 border border-emerald-100 text-center space-y-1">
+                        <div className="w-8 h-8 rounded-xl bg-emerald-500 text-white flex items-center justify-center mx-auto shadow-sm">
+                          <Trophy className="w-4 h-4" />
+                        </div>
+                        <h5 className="text-xs font-extrabold text-emerald-950">Hackathons & Events</h5>
+                        <p className="text-[11px] text-emerald-700/80 leading-tight">Compete for prizes & network</p>
+                      </div>
+                    </div>
+                  </div>
+
                   <div className="grid sm:grid-cols-2 gap-4">
                     <div className="p-4 rounded-2xl bg-amber-50/70 border border-amber-200/60">
                       <div className="flex items-center gap-2 text-amber-800 font-bold text-sm mb-2">
@@ -275,6 +322,7 @@ export default function ClubDetailModal({
 
               {activeSubTab === 'events' && (
                 <div className="space-y-6">
+                  {/* Upcoming Events */}
                   <div>
                     <h4 className="text-xs font-bold text-emerald-700 uppercase tracking-wider mb-3 flex items-center gap-1.5">
                       <Clock className="w-3.5 h-3.5" /> Upcoming Events ({club.upcoming_events?.length || 0})
@@ -296,6 +344,43 @@ export default function ClubDetailModal({
                                   year: 'numeric'
                                 })}
                               </span>
+                              <h5 className="font-bold text-sm text-slate-900">{ev.title}</h5>
+                              <p className="text-xs text-slate-600 line-clamp-2">{ev.description}</p>
+                              <span className="text-xs text-slate-400 flex items-center gap-1 pt-1">
+                                <MapPin className="w-3.5 h-3.5 text-slate-400" /> {ev.location}
+                              </span>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Past Events */}
+                  <div>
+                    <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3 flex items-center gap-1.5">
+                      <CheckCircle2 className="w-3.5 h-3.5 text-slate-400" /> Past Events ({club.past_events?.length || 0})
+                    </h4>
+                    {club.past_events?.length === 0 ? (
+                      <p className="text-xs text-slate-400 italic">No past events recorded yet.</p>
+                    ) : (
+                      <div className="space-y-3">
+                        {club.past_events.map((ev) => (
+                          <div
+                            key={ev.id}
+                            className="p-4 rounded-2xl bg-slate-50 border border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-4"
+                          >
+                            <div className="space-y-1">
+                              <div className="flex items-center gap-2">
+                                <span className="inline-block px-2 py-0.5 rounded-md text-[10px] font-bold bg-slate-200 text-slate-700">
+                                  {new Date(ev.event_date).toLocaleDateString(undefined, {
+                                    month: 'short',
+                                    day: 'numeric',
+                                    year: 'numeric'
+                                  })}
+                                </span>
+                                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Completed</span>
+                              </div>
                               <h5 className="font-bold text-sm text-slate-900">{ev.title}</h5>
                               <p className="text-xs text-slate-600 line-clamp-2">{ev.description}</p>
                               <span className="text-xs text-slate-400 flex items-center gap-1 pt-1">

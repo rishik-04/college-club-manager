@@ -71,10 +71,10 @@ export default function AskClubAssistant({ isOpen, onClose, onSelectClub }) {
               <Bot className="w-5 h-5" />
             </div>
             <div>
-              <h3 className="font-bold text-sm text-slate-900 flex items-center gap-1.5">
-                Club Advisor AI
+              <h3 className="font-extrabold text-sm text-slate-900 flex items-center gap-1.5">
+                Club Assistant ✨
                 <span className="px-1.5 py-0.5 rounded text-[10px] font-extrabold bg-sky-200 text-sky-800">
-                  GEN-AI
+                  AI
                 </span>
               </h3>
               <p className="text-[11px] text-slate-500">Ask about recruitment, events, and campus life</p>

@@ -123,6 +123,8 @@ class ClubListResponse(BaseModel):
     saved_count: int = 0
     is_saved: bool = False
     events_count: int = 0
+    next_event_title: Optional[str] = None
+    next_event_date: Optional[datetime.datetime] = None
 
     class Config:
         from_attributes = True
@@ -177,30 +179,39 @@ class AdminStats(BaseModel):
     top_saved_clubs: List[dict]
     category_distribution: List[dict]
 
-# Application Schemas (Phase 26)
+# Comprehensive Application Schemas
 class ApplicationCreate(BaseModel):
-    domain: str
-    experience_level: str
+    name: str
+    roll_no: str
+    branch: str
+    mobile_no: str
+    whatsapp_no: str
+    college_email: EmailStr
+    personal_email: EmailStr
     why_join: str
-    portfolio_url: Optional[str] = None
+    tshirt_size: str  # S, M, L, XL, XXL
+    payment_utr: Optional[str] = None
 
 class ApplicationStatusUpdate(BaseModel):
-    status: str  # Submitted, Screening, Interview Scheduled, Offered, Joined, Rejected
+    status: str
     admin_notes: Optional[str] = None
 
 class ApplicationResponse(BaseModel):
     id: int
     user_id: int
     club_id: int
-    applicant_name: Optional[str] = None
-    applicant_email: Optional[str] = None
-    applicant_branch: Optional[str] = None
-    applicant_year: Optional[str] = None
     club_name: Optional[str] = None
-    domain: str
-    experience_level: str
+    name: str
+    roll_no: str
+    branch: str
+    mobile_no: str
+    whatsapp_no: str
+    college_email: str
+    personal_email: str
     why_join: str
-    portfolio_url: Optional[str] = None
+    tshirt_size: str
+    payment_utr: Optional[str] = None
+    payment_proof_url: Optional[str] = None
     status: str
     admin_notes: Optional[str] = None
     created_at: datetime.datetime
@@ -208,7 +219,7 @@ class ApplicationResponse(BaseModel):
     class Config:
         from_attributes = True
 
-# Ticket / Event Registration Schemas (Phase 27)
+# Ticket / Event Registration Schemas
 class TicketResponse(BaseModel):
     id: int
     user_id: int
@@ -228,7 +239,7 @@ class TicketResponse(BaseModel):
 class CheckInRequest(BaseModel):
     ticket_code: str
 
-# Announcement Schemas (Phase 28)
+# Announcement Schemas
 class AnnouncementCreate(BaseModel):
     title: str
     content: str
