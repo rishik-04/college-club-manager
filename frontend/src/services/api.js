@@ -135,6 +135,22 @@ export const api = {
     },
 
     // Demographics Analytics & Roster APIs
+    join: async (clubId) => {
+      const res = await fetch(`${API_BASE}/clubs/${clubId}/join`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...getAuthHeader(),
+        },
+      });
+      return handleResponse(res);
+    },
+    getMyMemberships: async () => {
+      const res = await fetch(`${API_BASE}/clubs/my-memberships`, {
+        headers: { ...getAuthHeader() },
+      });
+      return handleResponse(res);
+    },
     getAnalytics: async (clubId) => {
       const res = await fetch(`${API_BASE}/clubs/${clubId}/analytics`, {
         headers: { ...getAuthHeader() },

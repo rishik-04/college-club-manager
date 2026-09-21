@@ -154,15 +154,13 @@ export default function ClubDetailModal({
                   </button>
 
                   {club.google_form_url && (
-                    <a
-                      href={club.google_form_url}
-                      target="_blank"
-                      rel="noreferrer"
+                    <button
+                      onClick={() => handleGoogleFormRegistration(club.google_form_url)}
                       className="px-4 py-2 rounded-md text-xs font-semibold text-white bg-[#173B67] hover:bg-[#122E52] transition shadow-2xs flex items-center gap-1.5"
                     >
                       <span>Application Form</span>
                       <ExternalLink className="w-3.5 h-3.5" />
-                    </a>
+                    </button>
                   )}
                 </div>
               </div>
@@ -290,15 +288,13 @@ export default function ClubDetailModal({
                       <div className="p-4 bg-blue-50 rounded-lg border border-blue-200 text-center space-y-2">
                         <h4 className="text-xs font-bold text-blue-900 uppercase tracking-wider">Membership Form</h4>
                         <p className="text-xs text-blue-800">Submit your registration via Google Form.</p>
-                        <a
-                          href={club.google_form_url}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="inline-flex items-center justify-center gap-1.5 px-4 py-2 bg-[#173B67] hover:bg-[#122E52] text-white rounded-md text-xs font-semibold shadow-xs w-full mt-1"
+                        <button
+                          onClick={() => handleGoogleFormRegistration(club.google_form_url)}
+                          className="inline-flex items-center justify-center gap-1.5 px-4 py-2 bg-[#CC0000] hover:bg-[#B30000] text-white rounded-md text-xs font-bold uppercase tracking-wider shadow-xs w-full mt-1"
                         >
                           <span>Apply Now</span>
                           <ExternalLink className="w-3.5 h-3.5" />
-                        </a>
+                        </button>
                       </div>
                     )}
                   </div>

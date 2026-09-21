@@ -16,25 +16,11 @@ export default function MyClubsPage({ onSelectClub, onExplore }) {
   const loadMyEnrolledClubs = async () => {
     setLoading(true);
     try {
-      const allClubs = await api.clubs.getAll();
-      const userClubs = [];
-      for (const club of allClubs) {
-        try {
-          const members = await api.clubs.getMembers(club.id);
-          const isMember = members.some((m) => m.student_id === user?.id || m.student_email === user?.email);
-          if (isMember) {
-            const detail = await api.clubs.getById(club.id);
-            userClubs.push(detail);
-          }
-        } catch (e) {}
-      }
-      if (userClubs.length === 0 && allClubs.length > 0) {
-        const demoDetail = await api.clubs.getById(allClubs[0].id);
-        userClubs.push(demoDetail);
-      }
-      setEnrolledClubs(userClubs);
+      const userClubs = await api.clubs.getMyMemberships();
+      setEnrolledClubs(Array.isArray(userClubs) ? userClubs : []);
     } catch (err) {
       console.error(err);
+      setEnrolledClubs([]);
     } finally {
       setLoading(false);
     }

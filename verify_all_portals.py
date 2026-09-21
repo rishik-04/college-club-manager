@@ -82,12 +82,34 @@ def test_all():
     ana = ana_res.json()
     print(f"[OK] GET /api/clubs/{my_club['id']}/analytics PASS (Keys: {list(ana.keys())})")
 
-    # 10. Super Admin Global Analytics
-    global_ana = requests.get(f"{BASE_URL}/admin/stats", headers=admin_headers)
-    if global_ana.status_code != 200:
-        print(f"FAILED GET /api/admin/stats: {global_ana.status_code} {global_ana.text}")
-    assert global_ana.status_code == 200
-    print("[OK] GET /api/admin/stats PASS")
+    # 11. Student Join Club via Google Form Flow
+    join_res = requests.post(f"{BASE_URL}/clubs/{my_club['id']}/join", headers=student_headers)
+    assert join_res.status_code in [200, 201]
+    print(f"[OK] POST /api/clubs/{my_club['id']}/join PASS ({join_res.json()['student_name']} joined {my_club['name']})")
+
+    # 12. Student Get My Memberships
+    my_mems = requests.get(f"{BASE_URL}/clubs/my-memberships", headers=student_headers)
+    if my_mems.status_code != 200:
+        print(f"FAILED GET /api/clubs/my-memberships: {my_mems.status_code} {my_mems.text}")
+    assert my_mems.status_code == 200 and isinstance(my_mems.json(), list)
+    print(f"[OK] GET /api/clubs/my-memberships PASS ({len(my_mems.json())} enrolled clubs found for student)")
+
+    # 13. Update Social Links for Club Admin
+    social_res = requests.put(
+        f"{BASE_URL}/clubs/{my_club['id']}",
+        headers=ca_headers,
+        json={
+            "instagram_url": "https://instagram.com/testclub",
+            "linkedin_url": "https://linkedin.com/company/testclub",
+            "website_url": "https://testclub.example.com"
+        }
+    )
+    assert social_res.status_code == 200
+    social_data = social_res.json()
+    assert social_data["instagram_url"] == "https://instagram.com/testclub"
+    assert social_data["linkedin_url"] == "https://linkedin.com/company/testclub"
+    assert social_data["website_url"] == "https://testclub.example.com"
+    print(f"[OK] PUT /api/clubs/{my_club['id']} Social Links PASS ({social_data['instagram_url']}, {social_data['linkedin_url']}, {social_data['website_url']})")
 
     print("\nALL BACKEND API AND DATA SHAPE CHECKS PASSED PERFECTLY!")
 

@@ -612,6 +612,7 @@ export default function ClubAdminPortal() {
                   type="url"
                   value={profileForm.logo_url}
                   onChange={(e) => setProfileForm({ ...profileForm, logo_url: e.target.value })}
+                  placeholder="https://example.com/logo.png"
                   className="w-full px-3.5 py-2 bg-slate-50 border border-slate-300 rounded-md text-xs text-slate-900 focus:outline-none focus:border-[#173B67] focus:bg-white"
                 />
               </div>
@@ -622,8 +623,48 @@ export default function ClubAdminPortal() {
                   type="url"
                   value={profileForm.cover_url}
                   onChange={(e) => setProfileForm({ ...profileForm, cover_url: e.target.value })}
+                  placeholder="https://example.com/cover.png"
                   className="w-full px-3.5 py-2 bg-slate-50 border border-slate-300 rounded-md text-xs text-slate-900 focus:outline-none focus:border-[#173B67] focus:bg-white"
                 />
+              </div>
+            </div>
+
+            <div className="space-y-4 pt-4 border-t border-slate-200">
+              <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider">Social Links & Web Presence (Optional)</h4>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1.5">Instagram URL</label>
+                  <input
+                    type="url"
+                    value={profileForm.instagram_url}
+                    onChange={(e) => setProfileForm({ ...profileForm, instagram_url: e.target.value })}
+                    placeholder="https://instagram.com/clubname"
+                    className="w-full px-3.5 py-2 bg-slate-50 border border-slate-300 rounded-md text-xs text-slate-900 focus:outline-none focus:border-[#173B67] focus:bg-white"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1.5">LinkedIn URL</label>
+                  <input
+                    type="url"
+                    value={profileForm.linkedin_url}
+                    onChange={(e) => setProfileForm({ ...profileForm, linkedin_url: e.target.value })}
+                    placeholder="https://linkedin.com/company/clubname"
+                    className="w-full px-3.5 py-2 bg-slate-50 border border-slate-300 rounded-md text-xs text-slate-900 focus:outline-none focus:border-[#173B67] focus:bg-white"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1.5">Official Website URL</label>
+                  <input
+                    type="url"
+                    value={profileForm.website_url}
+                    onChange={(e) => setProfileForm({ ...profileForm, website_url: e.target.value })}
+                    placeholder="https://example.com"
+                    className="w-full px-3.5 py-2 bg-slate-50 border border-slate-300 rounded-md text-xs text-slate-900 focus:outline-none focus:border-[#173B67] focus:bg-white"
+                  />
+                </div>
               </div>
             </div>
 

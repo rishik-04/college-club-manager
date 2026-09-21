@@ -46,8 +46,8 @@ app.add_middleware(
 
 # Mount Routers
 app.include_router(auth_routes.router)
-app.include_router(club_routes.router)
 app.include_router(membership_routes.router)
+app.include_router(club_routes.router)
 app.include_router(event_routes.router)
 app.include_router(saved_routes.router)
 app.include_router(admin_routes.router)

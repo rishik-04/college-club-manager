@@ -7,11 +7,89 @@ from sqlalchemy.exc import IntegrityError
 
 from ..database import get_db
 from ..models import Club, User, ClubMembership
-from ..schemas import ClubAnalyticsResponse, DemographicsDistribution, ClubMemberResponse, ClubMembershipCreate, BranchTree, YearTree, SectionCount
+from ..schemas import ClubAnalyticsResponse, DemographicsDistribution, ClubMemberResponse, ClubMembershipCreate, BranchTree, YearTree, SectionCount, ClubDetailResponse
 from ..auth import require_roles, get_current_user
-from .club_routes import check_club_permission
+from .club_routes import check_club_permission, get_club_details
 
 router = APIRouter(prefix="/api/clubs", tags=["Club Memberships & Demographics Analytics"])
+
+@router.get("/my-memberships", response_model=List[ClubDetailResponse])
+def get_my_enrolled_clubs(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    memberships = db.query(ClubMembership).filter(ClubMembership.student_id == current_user.id).all()
+    results = []
+    for m in memberships:
+        c_detail = get_club_details(club_id=m.club_id, db=db, current_user=current_user)
+        results.append(c_detail)
+    return results
+
+@router.post("/{club_id}/join", response_model=ClubMemberResponse, status_code=status.HTTP_201_CREATED)
+def join_club(
+    club_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    club = db.query(Club).filter(Club.id == club_id).first()
+    if not club:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Club not found.")
+
+    existing = db.query(ClubMembership).filter(
+        ClubMembership.student_id == current_user.id,
+        ClubMembership.club_id == club_id
+    ).first()
+
+    if existing:
+        return ClubMemberResponse(
+            id=existing.id,
+            student_id=current_user.id,
+            student_name=current_user.name,
+            student_email=current_user.email,
+            roll_number=current_user.roll_number,
+            branch=current_user.branch,
+            year=current_user.year,
+            section=current_user.section,
+            status=existing.status or "ACTIVE",
+            joined_at=existing.joined_at
+        )
+
+    try:
+        new_mem = ClubMembership(student_id=current_user.id, club_id=club_id, status="ACTIVE")
+        db.add(new_mem)
+        db.commit()
+        db.refresh(new_mem)
+    except IntegrityError:
+        db.rollback()
+        existing = db.query(ClubMembership).filter(
+            ClubMembership.student_id == current_user.id,
+            ClubMembership.club_id == club_id
+        ).first()
+        return ClubMemberResponse(
+            id=existing.id,
+            student_id=current_user.id,
+            student_name=current_user.name,
+            student_email=current_user.email,
+            roll_number=current_user.roll_number,
+            branch=current_user.branch,
+            year=current_user.year,
+            section=current_user.section,
+            status=existing.status or "ACTIVE",
+            joined_at=existing.joined_at
+        )
+
+    return ClubMemberResponse(
+        id=new_mem.id,
+        student_id=current_user.id,
+        student_name=current_user.name,
+        student_email=current_user.email,
+        roll_number=current_user.roll_number,
+        branch=current_user.branch,
+        year=current_user.year,
+        section=current_user.section,
+        status=new_mem.status,
+        joined_at=new_mem.joined_at
+    )
 
 @router.get("/{club_id}/analytics", response_model=ClubAnalyticsResponse)
 def get_club_analytics(
