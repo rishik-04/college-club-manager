@@ -4,11 +4,47 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
 from ..database import get_db
-from ..models import Announcement, Club, User
-from ..schemas import AnnouncementCreate, AnnouncementResponse
+from ..models import Announcement, Club, User, Event
+from ..schemas import AnnouncementCreate, AnnouncementUpdate, AnnouncementResponse
 from ..auth import require_roles
+from .club_routes import check_club_permission
 
 router = APIRouter(prefix="/api", tags=["Campus Announcements Newsfeed"])
+
+@router.get("/notifications")
+def get_student_notifications(db: Session = Depends(get_db)):
+    anns = db.query(Announcement).order_by(Announcement.created_at.desc()).limit(10).all()
+    now = datetime.datetime.utcnow()
+    events = db.query(Event).filter(Event.is_past == False, Event.event_date >= now).order_by(Event.event_date.asc()).limit(5).all()
+
+    notifications = []
+    for a in anns:
+        club = db.query(Club).filter(Club.id == a.club_id).first()
+        notifications.append({
+            "id": f"ann-{a.id}",
+            "type": "announcement",
+            "title": a.title,
+            "message": a.content,
+            "club_name": club.name if club else "Campus News",
+            "club_logo": club.logo_url if club else None,
+            "created_at": a.created_at.isoformat() if a.created_at else None,
+            "is_read": False
+        })
+
+    for ev in events:
+        club = db.query(Club).filter(Club.id == ev.club_id).first()
+        notifications.append({
+            "id": f"event-{ev.id}",
+            "type": "event",
+            "title": f"New Event: {ev.title}",
+            "message": ev.description,
+            "club_name": club.name if club else "Campus Club",
+            "club_logo": club.logo_url if club else None,
+            "created_at": ev.event_date.isoformat() if ev.event_date else None,
+            "is_read": False
+        })
+
+    return notifications
 
 @router.get("/announcements", response_model=List[AnnouncementResponse])
 def get_announcements(
@@ -46,6 +82,7 @@ def create_announcement(
     db: Session = Depends(get_db),
     admin: User = Depends(require_roles(["SUPER_ADMIN", "CLUB_ADMIN"]))
 ):
+    check_club_permission(admin, club_id, db)
     club = db.query(Club).filter(Club.id == club_id).first()
     if not club:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Club not found.")
@@ -74,6 +111,38 @@ def create_announcement(
         created_at=new_ann.created_at
     )
 
+@router.put("/announcements/{announcement_id}", response_model=AnnouncementResponse)
+def update_announcement(
+    announcement_id: int,
+    ann_in: AnnouncementUpdate,
+    db: Session = Depends(get_db),
+    admin: User = Depends(require_roles(["SUPER_ADMIN", "CLUB_ADMIN"]))
+):
+    ann = db.query(Announcement).filter(Announcement.id == announcement_id).first()
+    if not ann:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Announcement not found.")
+
+    check_club_permission(admin, ann.club_id, db)
+    update_data = ann_in.dict(exclude_unset=True)
+    for key, value in update_data.items():
+        setattr(ann, key, value)
+
+    db.commit()
+    db.refresh(ann)
+
+    club = db.query(Club).filter(Club.id == ann.club_id).first()
+    return AnnouncementResponse(
+        id=ann.id,
+        club_id=ann.club_id,
+        club_name=club.name if club else "Campus News",
+        club_logo=club.logo_url if club else None,
+        title=ann.title,
+        content=ann.content,
+        category=ann.category,
+        is_pinned=ann.is_pinned,
+        created_at=ann.created_at
+    )
+
 @router.delete("/announcements/{announcement_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_announcement(
     announcement_id: int,
@@ -83,6 +152,8 @@ def delete_announcement(
     ann = db.query(Announcement).filter(Announcement.id == announcement_id).first()
     if not ann:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Announcement not found.")
+
+    check_club_permission(admin, ann.club_id, db)
     db.delete(ann)
     db.commit()
     return None

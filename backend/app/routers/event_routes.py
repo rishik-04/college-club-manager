@@ -4,9 +4,10 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
 from ..database import get_db
-from ..models import Event, Club, User
+from ..models import Event, Club, User, EventRegistration
 from ..schemas import EventResponse, EventCreate, EventUpdate
-from ..auth import require_roles
+from ..auth import require_roles, get_optional_current_user, get_current_user
+from .club_routes import check_club_permission
 
 router = APIRouter(prefix="/api", tags=["Events"])
 
@@ -14,7 +15,8 @@ router = APIRouter(prefix="/api", tags=["Events"])
 def get_all_events(
     filter_type: Optional[str] = Query("all", description="'all', 'upcoming', or 'past'"),
     club_id: Optional[int] = Query(None, description="Filter events for a specific club"),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: Optional[User] = Depends(get_optional_current_user)
 ):
     query = db.query(Event)
     if club_id:
@@ -29,6 +31,12 @@ def get_all_events(
         query = query.order_by(Event.event_date.desc())
 
     events = query.all()
+    registered_event_ids = set()
+    if current_user:
+        registered_event_ids = {
+            r.event_id for r in db.query(EventRegistration.event_id).filter(EventRegistration.student_id == current_user.id).all()
+        }
+
     results = []
     for ev in events:
         club = db.query(Club.name).filter(Club.id == ev.club_id).first()
@@ -43,10 +51,43 @@ def get_all_events(
                 image_url=ev.image_url,
                 is_past=ev.is_past or (ev.event_date < now),
                 registration_url=ev.registration_url,
-                club_name=club[0] if club else None
+                club_name=club[0] if club else None,
+                is_registered=(ev.id in registered_event_ids)
             )
         )
     return results
+
+@router.get("/events/my-registrations", response_model=List[int])
+def get_my_event_registrations(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    regs = db.query(EventRegistration.event_id).filter(EventRegistration.student_id == current_user.id).all()
+    return [r[0] for r in regs]
+
+@router.post("/events/{event_id}/register")
+def register_for_event(
+    event_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    event = db.query(Event).filter(Event.id == event_id).first()
+    if not event:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Event not found.")
+
+    existing = db.query(EventRegistration).filter(
+        EventRegistration.student_id == current_user.id,
+        EventRegistration.event_id == event_id
+    ).first()
+
+    if existing:
+        return {"registered": True, "message": "Already registered for this event."}
+
+    new_reg = EventRegistration(student_id=current_user.id, event_id=event_id)
+    db.add(new_reg)
+    db.commit()
+
+    return {"registered": True, "message": "Successfully registered for event!"}
 
 @router.post("/clubs/{club_id}/events", response_model=EventResponse, status_code=status.HTTP_201_CREATED)
 def create_event(
@@ -55,6 +96,7 @@ def create_event(
     db: Session = Depends(get_db),
     admin: User = Depends(require_roles(["SUPER_ADMIN", "CLUB_ADMIN"]))
 ):
+    check_club_permission(admin, club_id, db)
     club = db.query(Club).filter(Club.id == club_id).first()
     if not club:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Club not found.")
@@ -88,6 +130,7 @@ def update_event(
     if not event:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Event not found.")
 
+    check_club_permission(admin, event.club_id, db)
     update_data = event_in.dict(exclude_unset=True)
     for key, value in update_data.items():
         setattr(event, key, value)
@@ -119,6 +162,7 @@ def delete_event(
     if not event:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Event not found.")
 
+    check_club_permission(admin, event.club_id, db)
     db.delete(event)
     db.commit()
     return None

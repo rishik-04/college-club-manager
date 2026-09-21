@@ -1,44 +1,135 @@
 import datetime
+import random
 from sqlalchemy.orm import Session
-from .models import User, Club, BoardMember, Event, SavedClub, Application, Ticket, Announcement
+from .models import User, Club, BoardMember, Event, SavedClub, Announcement, ClubAdmin, ClubMembership
 from .auth import hash_password
 
 def seed_database(db: Session):
     if db.query(Club).count() > 0:
         return
 
-    print("Seeding College Club Manager database with Enterprise & Unified Form data...")
+    print("Seeding College Club Manager database with 3-tier Architecture & Real Demographics Data...")
 
-    # 1. Seed Users
+    # Pre-compute bcrypt password hashes for all common combinations
+    student_pw_hash = hash_password("password123")
+    admin_pw_hash = hash_password("admin123")
+    clubadmin_pw_hash = hash_password("clubadmin123")
+    superadmin_pw_hash = hash_password("superadmin123")
+
+    # 1. Seed Core Users (including email aliases so all login combinations work)
     student_user = User(
         name="Alex Rivera",
         email="student@college.edu",
-        password_hash=hash_password("password123"),
+        password_hash=student_pw_hash,
         role="STUDENT",
         branch="Computer Science & Engineering",
         year="3rd Year",
+        section="Section A",
         interests="AI, Machine Learning, Python, Web Development, Hackathons, UI/UX"
     )
+    student_user_alias = User(
+        name="Alex Rivera",
+        email="alex.rivera@college.edu",
+        password_hash=student_pw_hash,
+        role="STUDENT",
+        branch="Computer Science & Engineering",
+        year="3rd Year",
+        section="Section A",
+        interests="AI, Machine Learning, Python, Web Development, Hackathons, UI/UX"
+    )
+
     admin_user = User(
         name="Dr. Sarah Jenkins",
         email="admin@college.edu",
-        password_hash=hash_password("admin123"),
+        password_hash=admin_pw_hash,
         role="SUPER_ADMIN",
         branch="Computer Science / Dean Office",
         year="Faculty Advisor",
+        section="Faculty",
         interests="Administration, Accreditation, Leadership"
     )
+    admin_user_alias1 = User(
+        name="Dr. Sarah Jenkins",
+        email="superadmin@college.edu",
+        password_hash=superadmin_pw_hash,
+        role="SUPER_ADMIN",
+        branch="Computer Science / Dean Office",
+        year="Faculty Advisor",
+        section="Faculty",
+        interests="Administration, Accreditation, Leadership"
+    )
+    admin_user_alias2 = User(
+        name="Dr. Sarah Jenkins",
+        email="sarah.chen@college.edu",
+        password_hash=admin_pw_hash,
+        role="SUPER_ADMIN",
+        branch="Computer Science / Dean Office",
+        year="Faculty Advisor",
+        section="Faculty",
+        interests="Administration, Accreditation, Leadership"
+    )
+
     club_admin_user = User(
         name="Marcus Chen",
         email="clubadmin@college.edu",
-        password_hash=hash_password("clubadmin123"),
+        password_hash=clubadmin_pw_hash,
         role="CLUB_ADMIN",
         branch="Information Technology",
         year="4th Year",
+        section="Section B",
+        interests="Robotics, Embedded Systems, IoT"
+    )
+    club_admin_user_alias1 = User(
+        name="Marcus Chen",
+        email="marcus.chen@college.edu",
+        password_hash=admin_pw_hash,
+        role="CLUB_ADMIN",
+        branch="Information Technology",
+        year="4th Year",
+        section="Section B",
         interests="Robotics, Embedded Systems, IoT"
     )
 
-    db.add_all([student_user, admin_user, club_admin_user])
+    db.add_all([
+        student_user, student_user_alias, 
+        admin_user, admin_user_alias1, admin_user_alias2, 
+        club_admin_user, club_admin_user_alias1
+    ])
+    db.commit()
+
+    # Seed 150 student user profiles for rich realistic demographics calculations
+    years = ["1st Year", "2nd Year", "3rd Year", "4th Year"]
+    year_weights = [0.35, 0.30, 0.20, 0.15]
+    branches = ["Computer Science & Engineering", "Data Science", "Electronics & Communication", "Electrical & Electronics", "Mechanical Engineering"]
+    branch_weights = [0.45, 0.25, 0.15, 0.10, 0.05]
+    sections = ["Section A", "Section B", "Section C", "Section D"]
+
+    first_names = ["Aarav", "Ananya", "Rohan", "Priya", "Rahul", "Neha", "Vikram", "Sneha", "Karan", "Kavya", "Aditya", "Riya", "Dev", "Pooja", "Siddharth", "Isha", "Arjun", "Tanya", "Varun", "Meera"]
+    last_names = ["Sharma", "Verma", "Reddy", "Rao", "Patel", "Nair", "Gupta", "Kumar", "Singh", "Joshi", "Chowdary", "Deshmukh", "Kulkarni", "Mehta", "Bhat"]
+
+    seeded_students = []
+    for i in range(1, 151):
+        fn = random.choice(first_names)
+        ln = random.choice(last_names)
+        name = f"{fn} {ln}"
+        email = f"student{i}@college.edu"
+        yr = random.choices(years, weights=year_weights)[0]
+        br = random.choices(branches, weights=branch_weights)[0]
+        sec = random.choice(sections)
+
+        st = User(
+            name=name,
+            email=email,
+            password_hash=student_pw_hash,
+            role="STUDENT",
+            branch=br,
+            year=yr,
+            section=sec,
+            interests="Clubs, Tech, Events, Coding"
+        )
+        db.add(st)
+        seeded_students.append(st)
+
     db.commit()
 
     now = datetime.datetime.utcnow()
@@ -154,6 +245,7 @@ def seed_database(db: Session):
         }
     ]
 
+    created_clubs = []
     for cdata in clubs_data:
         board_members_data = cdata.pop("board_members")
         events_data = cdata.pop("events")
@@ -161,6 +253,7 @@ def seed_database(db: Session):
         club = Club(**cdata)
         db.add(club)
         db.flush()
+        created_clubs.append(club)
 
         for bm in board_members_data:
             member = BoardMember(club_id=club.id, **bm)
@@ -174,41 +267,26 @@ def seed_database(db: Session):
 
     ai_club = db.query(Club).filter(Club.name == "AI & Machine Learning Club").first()
     web_club = db.query(Club).filter(Club.name == "Full-Stack Web & Mobile Guild").first()
-    first_event = db.query(Event).first()
+    infinitix_club = db.query(Club).filter(Club.name == "The Infinitix Club").first()
+
+    if ai_club and club_admin_user:
+        db.add(ClubAdmin(user_id=club_admin_user.id, club_id=ai_club.id))
 
     if ai_club and student_user:
         db.add(SavedClub(user_id=student_user.id, club_id=ai_club.id))
-
-        app1 = Application(
-            user_id=student_user.id,
-            club_id=ai_club.id,
-            name="Alex Rivera",
-            roll_no="2101A0501",
-            branch="Computer Science & Engineering",
-            mobile_no="+91 98765 43210",
-            whatsapp_no="+91 98765 43210",
-            college_email="student@college.edu",
-            personal_email="alex.rivera.dev@gmail.com",
-            why_join="I want to contribute to the open-source LLM research project and mentor junior students.",
-            tshirt_size="L",
-            payment_utr="UPI/329482019482",
-            status="Screening",
-            admin_notes="Payment verified (UTR: 329482019482). Scheduled for technical interview.",
-            created_at=now - datetime.timedelta(days=2)
-        )
-        db.add(app1)
+        db.add(ClubMembership(student_id=student_user.id, club_id=ai_club.id))
 
         ann1 = Announcement(
             club_id=ai_club.id,
-            title="🔥 Spring Recruitment Auditions Announced!",
-            content="We are officially opening applications for Technical Leads and Research Fellows. Fill the unified form and verify your UPI payment UTR for official club kit distribution!",
+            title="🔥 Spring Recruitment & Workshop Registration!",
+            content="We are officially opening applications for Technical Leads and Research Fellows. Click the Application Form tab to fill out our official Google Form!",
             category="Recruitment",
             is_pinned=True,
             created_at=now - datetime.timedelta(hours=5)
         )
         db.add(ann1)
 
-    if web_club and student_user:
+    if web_club:
         ann2 = Announcement(
             club_id=web_club.id,
             title="📍 HackWinter Venue Updated to Innovation Lab 3",
@@ -219,15 +297,23 @@ def seed_database(db: Session):
         )
         db.add(ann2)
 
-    if first_event and student_user:
-        t1 = Ticket(
-            user_id=student_user.id,
-            event_id=first_event.id,
-            ticket_code="CCM-AI2026X",
-            status="REGISTERED",
-            created_at=now - datetime.timedelta(days=1)
-        )
-        db.add(t1)
+    # 3. Seed Club Memberships for Demographics (AI Club gets 142 members, Web Guild gets 85, Infinitix gets 95)
+    all_students_ids = [s.id for s in seeded_students]
+
+    # AI Club Memberships
+    ai_members = all_students_ids[:142]
+    for s_id in ai_members:
+        db.add(ClubMembership(student_id=s_id, club_id=ai_club.id))
+
+    # Web Guild Memberships
+    web_members = all_students_ids[30:115]
+    for s_id in web_members:
+        db.add(ClubMembership(student_id=s_id, club_id=web_club.id))
+
+    # Infinitix Memberships
+    infinitix_members = all_students_ids[50:145]
+    for s_id in infinitix_members:
+        db.add(ClubMembership(student_id=s_id, club_id=infinitix_club.id))
 
     db.commit()
-    print("Database seeding completed with unified form & payment data!")
+    print("Database seeding completed successfully with 3-tier architecture and real student demographics!")

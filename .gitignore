@@ -17,7 +17,6 @@ dist/
 .env
 .env.local
 
-# IDE
-.idea/
-.vscode/
-*.swp
+# OS / Scratch wrappers
+*.cmd
+.DS_Store

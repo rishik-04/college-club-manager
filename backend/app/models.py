@@ -1,5 +1,5 @@
 import datetime
-from sqlalchemy import Column, Integer, String, Text, Boolean, DateTime, ForeignKey
+from sqlalchemy import Column, Integer, String, Text, Boolean, DateTime, ForeignKey, UniqueConstraint
 from sqlalchemy.orm import relationship
 from .database import Base
 
@@ -11,14 +11,26 @@ class User(Base):
     email = Column(String(150), unique=True, index=True, nullable=False)
     password_hash = Column(String(255), nullable=False)
     role = Column(String(50), default="STUDENT", nullable=False)  # STUDENT, CLUB_ADMIN, SUPER_ADMIN
-    branch = Column(String(100), nullable=True)
-    year = Column(String(50), nullable=True)
+    roll_number = Column(String(50), nullable=True)
+    branch = Column(String(100), nullable=True)  # CSE, Data Science, ECE, EEE, Mechanical, Other
+    year = Column(String(50), nullable=True)     # 1st Year, 2nd Year, 3rd Year, 4th Year
+    section = Column(String(50), nullable=True)  # Section A, Section B, Section C, Section D
     interests = Column(Text, nullable=True)
     created_at = Column(DateTime, default=datetime.datetime.utcnow)
 
     saved_clubs = relationship("SavedClub", back_populates="user", cascade="all, delete-orphan")
-    applications = relationship("Application", back_populates="user", cascade="all, delete-orphan")
-    tickets = relationship("Ticket", back_populates="user", cascade="all, delete-orphan")
+    admin_assignments = relationship("ClubAdmin", back_populates="user", cascade="all, delete-orphan")
+
+class ClubAdmin(Base):
+    __tablename__ = "club_admins"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    club_id = Column(Integer, ForeignKey("clubs.id"), nullable=False)
+    created_at = Column(DateTime, default=datetime.datetime.utcnow)
+
+    user = relationship("User", back_populates="admin_assignments")
+    club = relationship("Club", back_populates="admin_assignments")
 
 class Club(Base):
     __tablename__ = "clubs"
@@ -41,8 +53,23 @@ class Club(Base):
     board_members = relationship("BoardMember", back_populates="club", cascade="all, delete-orphan")
     events = relationship("Event", back_populates="club", cascade="all, delete-orphan")
     saved_by = relationship("SavedClub", back_populates="club", cascade="all, delete-orphan")
-    applications = relationship("Application", back_populates="club", cascade="all, delete-orphan")
     announcements = relationship("Announcement", back_populates="club", cascade="all, delete-orphan")
+    admin_assignments = relationship("ClubAdmin", back_populates="club", cascade="all, delete-orphan")
+
+class ClubMembership(Base):
+    __tablename__ = "club_memberships"
+    __table_args__ = (
+        UniqueConstraint("student_id", "club_id", name="unique_student_club"),
+    )
+
+    id = Column(Integer, primary_key=True, index=True)
+    student_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    club_id = Column(Integer, ForeignKey("clubs.id"), nullable=False)
+    status = Column(String(50), default="ACTIVE")
+    joined_at = Column(DateTime, default=datetime.datetime.utcnow)
+
+    student = relationship("User", backref="club_memberships")
+    club = relationship("Club", backref="memberships")
 
 class BoardMember(Base):
     __tablename__ = "board_members"
@@ -71,7 +98,6 @@ class Event(Base):
     registration_url = Column(String(500), nullable=True)
 
     club = relationship("Club", back_populates="events")
-    tickets = relationship("Ticket", back_populates="event", cascade="all, delete-orphan")
 
 class SavedClub(Base):
     __tablename__ = "saved_clubs"
@@ -83,49 +109,6 @@ class SavedClub(Base):
 
     user = relationship("User", back_populates="saved_clubs")
     club = relationship("Club", back_populates="saved_by")
-
-class Application(Base):
-    __tablename__ = "applications"
-
-    id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
-    club_id = Column(Integer, ForeignKey("clubs.id"), nullable=False)
-
-    # Detailed Unified Form Fields
-    name = Column(String(120), nullable=False)
-    roll_no = Column(String(50), nullable=False)
-    branch = Column(String(100), nullable=False)
-    mobile_no = Column(String(20), nullable=False)
-    whatsapp_no = Column(String(20), nullable=False)
-    college_email = Column(String(150), nullable=False)
-    personal_email = Column(String(150), nullable=False)
-
-    why_join = Column(Text, nullable=False)
-    tshirt_size = Column(String(20), nullable=False, default="L")  # S, M, L, XL, XXL
-    payment_utr = Column(String(100), nullable=True)
-    payment_proof_url = Column(String(500), nullable=True)
-
-    status = Column(String(50), default="Submitted", nullable=False)  # Submitted, Screening, Interview Scheduled, Offered, Joined, Rejected
-    admin_notes = Column(Text, nullable=True)
-    created_at = Column(DateTime, default=datetime.datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.datetime.utcnow, onupdate=datetime.datetime.utcnow)
-
-    user = relationship("User", back_populates="applications")
-    club = relationship("Club", back_populates="applications")
-
-class Ticket(Base):
-    __tablename__ = "tickets"
-
-    id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
-    event_id = Column(Integer, ForeignKey("events.id"), nullable=False)
-    ticket_code = Column(String(100), unique=True, index=True, nullable=False)
-    status = Column(String(50), default="REGISTERED", nullable=False)
-    checked_in_at = Column(DateTime, nullable=True)
-    created_at = Column(DateTime, default=datetime.datetime.utcnow)
-
-    user = relationship("User", back_populates="tickets")
-    event = relationship("Event", back_populates="tickets")
 
 class Announcement(Base):
     __tablename__ = "announcements"
@@ -139,3 +122,17 @@ class Announcement(Base):
     created_at = Column(DateTime, default=datetime.datetime.utcnow)
 
     club = relationship("Club", back_populates="announcements")
+
+class EventRegistration(Base):
+    __tablename__ = "event_registrations"
+    __table_args__ = (
+        UniqueConstraint("student_id", "event_id", name="unique_student_event_reg"),
+    )
+
+    id = Column(Integer, primary_key=True, index=True)
+    student_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    event_id = Column(Integer, ForeignKey("events.id"), nullable=False)
+    registered_at = Column(DateTime, default=datetime.datetime.utcnow)
+
+    student = relationship("User")
+    event = relationship("Event")

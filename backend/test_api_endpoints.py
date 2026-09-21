@@ -1,65 +1,83 @@
 import sys
 import os
 
-sys.path.insert(0, r"C:\Users\KOTAGIRI RISHIK\.gemini\antigravity\scratch\college-club-manager\backend")
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
+from app.database import engine, Base, SessionLocal
+from app.seed_data import seed_database
+from app.models import User, Club, ClubAdmin, ClubMembership
 from fastapi.testclient import TestClient
 from app.main import app
 
-def run_tests():
-    with TestClient(app) as client:
-        print("--- 1. Testing Health & Root Endpoints ---")
-        res = client.get("/")
-        assert res.status_code == 200, f"Root failed: {res.text}"
+# Reset Database
+print("Initializing test database...")
+engine.dispose()
+Base.metadata.drop_all(bind=engine)
+Base.metadata.create_all(bind=engine)
 
-        res = client.get("/api/health")
-        assert res.status_code == 200, f"Health failed: {res.text}"
-        print(" Health check passed")
+db = SessionLocal()
+seed_database(db)
+db.close()
 
-        print("\n--- 2. Testing Authentication ---")
-        res = client.post("/api/auth/login", json={"email": "student@college.edu", "password": "password123"})
-        assert res.status_code == 200
-        student_token = res.json()["access_token"]
-        student_headers = {"Authorization": f"Bearer {student_token}"}
+client = TestClient(app)
 
-        res = client.post("/api/auth/login", json={"email": "admin@college.edu", "password": "admin123"})
-        assert res.status_code == 200
-        admin_token = res.json()["access_token"]
-        admin_headers = {"Authorization": f"Bearer {admin_token}"}
-        print(" Student and Admin auth verified")
+print("\n--- TEST 1: Authentication ---")
+res_student = client.post("/api/auth/login", json={"email": "student@college.edu", "password": "password123"})
+assert res_student.status_code == 200, f"Student login failed: {res_student.text}"
+student_token = res_student.json()["access_token"]
+print("[OK] Student Login Success")
 
-        print("\n--- 3. Testing Unified Application Form & Payment Scanner (Phase 26) ---")
-        res = client.post(
-            "/api/clubs/2/apply",
-            headers=student_headers,
-            json={
-                "name": "Alex Rivera",
-                "roll_no": "2101A0501",
-                "branch": "Computer Science & Engineering",
-                "mobile_no": "+91 98765 43210",
-                "whatsapp_no": "+91 98765 43210",
-                "college_email": "student@college.edu",
-                "personal_email": "alex.rivera@gmail.com",
-                "why_join": "I want to lead technical workshops and build open-source projects.",
-                "tshirt_size": "XL",
-                "payment_utr": "UPI/987654321098"
-            }
-        )
-        assert res.status_code in [200, 201], f"Apply failed: {res.text}"
-        app_data = res.json()
-        assert app_data["roll_no"] == "2101A0501"
-        assert app_data["tshirt_size"] == "XL"
-        assert app_data["payment_utr"] == "UPI/987654321098"
-        print(f" Application #{app_data['id']} verified with Roll No 2101A0501 and Payment UTR")
+res_club_admin = client.post("/api/auth/login", json={"email": "clubadmin@college.edu", "password": "clubadmin123"})
+assert res_club_admin.status_code == 200, f"Club admin login failed: {res_club_admin.text}"
+club_admin_token = res_club_admin.json()["access_token"]
+print("[OK] Club Admin Login Success")
 
-        # Kanban Admin View
-        res = client.get("/api/admin/applications", headers=admin_headers)
-        assert res.status_code == 200
-        apps = res.json()
-        assert any(a["roll_no"] == "2101A0501" for a in apps)
-        print(" Admin Kanban feed verified with student Roll No and Payment UTR")
+res_super_admin = client.post("/api/auth/login", json={"email": "admin@college.edu", "password": "admin123"})
+assert res_super_admin.status_code == 200, f"Super admin login failed: {res_super_admin.text}"
+super_admin_token = res_super_admin.json()["access_token"]
+print("[OK] Super Admin Login Success")
 
-        print("\n ALL UNIFIED APPLICATION FORM & PAYMENTS TESTS PASSED! ")
+print("\n--- TEST 2: Demographics Analytics API ---")
+res_analytics = client.get("/api/clubs/1/analytics")
+assert res_analytics.status_code == 200, f"Analytics failed: {res_analytics.text}"
+analytics_data = res_analytics.json()
+print(f"[OK] Total Members for Club 1: {analytics_data['total_members']}")
+print(f"[OK] Year Distribution: {analytics_data['year_distribution']}")
+print(f"[OK] Branch Distribution: {analytics_data['branch_distribution']}")
+print(f"[OK] Section Distribution: {analytics_data['section_distribution']}")
+assert analytics_data['total_members'] > 0, "Demographics members count should be > 0"
 
-if __name__ == "__main__":
-    run_tests()
+print("\n--- TEST 3: Club Membership Roster & Duplicate Rejection (409 Conflict) ---")
+headers_admin = {"Authorization": f"Bearer {club_admin_token}"}
+# Get roster
+res_roster = client.get("/api/clubs/1/members")
+assert res_roster.status_code == 200, f"Get roster failed: {res_roster.text}"
+roster = res_roster.json()
+print(f"[OK] Roster count: {len(roster)}")
+
+# Try adding an existing member to trigger 409 Conflict
+first_student_id = roster[0]["student_id"]
+res_dup = client.post("/api/clubs/1/members", json={"student_id": first_student_id}, headers=headers_admin)
+assert res_dup.status_code == 409, f"Expected 409 Conflict for duplicate membership, got: {res_dup.status_code}"
+print("[OK] Duplicate membership correctly rejected with 409 Conflict")
+
+print("\n--- TEST 4: RBAC 403 Forbidden Enforcement ---")
+# Club Admin is assigned to Club 1. Try modifying Club 2
+res_unauthorized = client.put(
+    "/api/clubs/2",
+    json={"description": "Unauthorized attempt to modify unassigned club"},
+    headers=headers_admin
+)
+assert res_unauthorized.status_code == 403, f"Expected 403 Forbidden for unauthorized club access, got: {res_unauthorized.status_code}"
+print("[OK] Strict RBAC 403 Forbidden check passed for unassigned club modification")
+
+print("\n--- TEST 5: Super Admin Assignment & Global Stats ---" )
+headers_super = {"Authorization": f"Bearer {super_admin_token}"}
+res_stats = client.get("/api/admin/stats", headers=headers_super)
+assert res_stats.status_code == 200, f"Admin stats failed: {res_stats.text}"
+print(f"[OK] Global Stats Total Clubs: {res_stats.json()['total_clubs']}")
+print(f"[OK] Global Stats Total Students: {res_stats.json()['total_students']}")
+
+print("\n==========================================")
+print("ALL BACKEND SUITE TESTS PASSED CLEANLY!")
+print("==========================================")

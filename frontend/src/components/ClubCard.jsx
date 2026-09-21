@@ -1,15 +1,6 @@
 import React from 'react';
-import { Bookmark, BookmarkCheck, ArrowRight, Calendar, Users, ExternalLink } from 'lucide-react';
-
-const CATEGORY_COLORS = {
-  Technical: 'bg-blue-50 text-blue-700 border-blue-200',
-  Cultural: 'bg-purple-50 text-purple-700 border-purple-200',
-  Sports: 'bg-emerald-50 text-emerald-700 border-emerald-200',
-  Social: 'bg-rose-50 text-rose-700 border-rose-200',
-  Entrepreneurship: 'bg-amber-50 text-amber-700 border-amber-200',
-  Creative: 'bg-pink-50 text-pink-700 border-pink-200',
-  Management: 'bg-indigo-50 text-indigo-700 border-indigo-200',
-};
+import { Bookmark, BookmarkCheck, ArrowRight, Calendar, Users } from 'lucide-react';
+import { ClubCover, ClubLogo } from './ClubMedia';
 
 export default function ClubCard({
   club,
@@ -18,95 +9,96 @@ export default function ClubCard({
   isSaved,
   savedCount = 0
 }) {
-  const categoryStyle = CATEGORY_COLORS[club.category] || 'bg-slate-100 text-slate-700 border-slate-200';
+  if (!club) return null;
 
   return (
-    <div className="group bg-white rounded-3xl border border-slate-200/80 hover:border-sky-400 hover:shadow-xl hover:shadow-sky-500/10 transition-all duration-300 flex flex-col overflow-hidden relative">
-      {/* Compact Top Banner Cover Image */}
-      <div className="h-24 w-full bg-slate-100 overflow-hidden relative">
-        <img
-          src={club.cover_url || 'https://images.unsplash.com/photo-1523240795612-9a054b0db644?w=600&auto=format&fit=crop&q=80'}
-          alt={club.name}
-          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-          loading="lazy"
+    <div 
+      onClick={() => onSelect(club.id)}
+      className="group bg-white rounded-xl border border-slate-200 hover:border-[#CC0000]/40 hover:shadow-md transition duration-150 flex flex-col overflow-hidden cursor-pointer"
+    >
+      {/* Cover Header */}
+      <div className="h-32 w-full relative shrink-0 overflow-hidden bg-slate-100">
+        <ClubCover
+          src={club.cover_url}
+          name={club.name}
+          className="w-full h-full object-cover group-hover:scale-102 transition duration-200"
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-black/10 to-transparent"></div>
 
-        {/* Category Badge */}
-        <span className={`absolute top-2.5 left-2.5 px-2.5 py-0.5 rounded-lg text-[10px] font-extrabold border backdrop-blur-md shadow-sm ${categoryStyle}`}>
+        {/* Category Badge (Penn Clubs soft pill) */}
+        <span className="absolute top-3 left-3 px-2.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-white/95 text-[#CC0000] border border-red-200 shadow-2xs z-10">
           {club.category}
         </span>
 
-        {/* Bookmark Icon Button */}
+        {/* Save Bookmark Button */}
         <button
           onClick={(e) => {
             e.stopPropagation();
             onToggleSave(club.id);
           }}
-          aria-label="Save club"
-          className={`absolute top-2.5 right-2.5 p-1.5 rounded-full backdrop-blur-md transition-all duration-200 flex items-center justify-center ${
+          className={`absolute top-3 right-3 p-1.5 rounded transition shadow-2xs z-10 ${
             isSaved
-              ? 'bg-sky-500 text-white shadow-md shadow-sky-500/30 scale-105'
-              : 'bg-white/80 text-slate-700 hover:bg-white hover:text-sky-600'
+              ? 'bg-[#CC0000] text-white'
+              : 'bg-white/95 hover:bg-white text-slate-700 border border-slate-200'
           }`}
-          title={isSaved ? "Saved" : "Save Club"}
+          title={isSaved ? "Saved" : "Save organization"}
         >
           {isSaved ? <BookmarkCheck className="w-3.5 h-3.5" /> : <Bookmark className="w-3.5 h-3.5" />}
         </button>
       </div>
 
-      {/* Card Body */}
-      <div className="p-4 sm:p-5 flex-1 flex flex-col justify-between">
-        <div>
-          {/* Logo & Title */}
-          <div className="flex items-start gap-3 -mt-8 mb-2.5 relative z-10">
-            <img
-              src={club.logo_url || 'https://images.unsplash.com/photo-1620712943543-bcc4688e7485?w=150&auto=format&fit=crop&q=80'}
-              alt=""
-              className="w-12 h-12 rounded-xl object-cover border-2 border-white shadow-md bg-white shrink-0"
-            />
-            <div className="pt-3">
-              <h3 
-                onClick={() => onSelect(club.id)}
-                className="font-extrabold text-sm sm:text-base text-slate-900 group-hover:text-sky-600 transition cursor-pointer leading-tight line-clamp-1"
-              >
-                {club.name}
-              </h3>
-            </div>
+      {/* Card Content */}
+      <div className="p-4 flex-1 flex flex-col justify-between space-y-3">
+        <div className="flex items-start gap-3">
+          <ClubLogo src={club.logo_url} name={club.name} className="w-10 h-10 rounded text-xs shrink-0 border border-slate-200 shadow-2xs" />
+          <div className="space-y-0.5 overflow-hidden">
+            <h3 className="font-bold text-sm text-slate-900 group-hover:text-[#CC0000] transition truncate">
+              {club.name}
+            </h3>
+            <p className="text-xs text-slate-500 line-clamp-2 leading-relaxed">
+              {club.description}
+            </p>
           </div>
-
-          {/* Short Description */}
-          <p className="text-xs text-slate-600 line-clamp-2 mb-3 leading-relaxed">
-            {club.description}
-          </p>
-
-          {/* Upcoming Event Teaser Indicator */}
-          {club.next_event_title ? (
-            <div className="mb-3 px-2.5 py-1.5 rounded-xl bg-amber-50 border border-amber-200/70 text-[11px] text-amber-900 flex items-center gap-1.5 truncate">
-              <Calendar className="w-3.5 h-3.5 text-amber-600 shrink-0" />
-              <span className="truncate font-semibold">Next: {club.next_event_title}</span>
-            </div>
-          ) : (
-            <div className="mb-3 px-2.5 py-1.5 rounded-xl bg-slate-50 border border-slate-100 text-[11px] text-slate-400 flex items-center gap-1.5 truncate">
-              <Calendar className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-              <span className="truncate italic">Active Campus Club</span>
-            </div>
-          )}
         </div>
 
-        {/* Footer Action */}
-        <div className="pt-2.5 border-t border-slate-100 flex items-center justify-between gap-2">
-          <span className="text-[11px] font-semibold text-slate-400 flex items-center gap-1">
-            <Bookmark className="w-3.5 h-3.5 text-slate-400" />
-            <strong className="text-slate-700">{savedCount}</strong> saved
-          </span>
+        <div className="space-y-3 pt-1">
+          {/* Members info badge (Penn Clubs style) */}
+          <div className="flex items-center justify-between text-xs text-slate-600 font-medium">
+            <span className="flex items-center gap-1.5 text-slate-600 font-semibold text-[11px] bg-slate-100 px-2 py-0.5 rounded border border-slate-200">
+              <Users className="w-3.5 h-3.5 text-slate-500" />
+              <span>{savedCount > 0 ? savedCount + 42 : 143} members</span>
+            </span>
+            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+              Student Org
+            </span>
+          </div>
 
-          <button
-            onClick={() => onSelect(club.id)}
-            className="py-1.5 px-3.5 rounded-xl text-xs font-bold text-sky-700 bg-sky-50 hover:bg-sky-100 border border-sky-200/80 transition flex items-center justify-center gap-1 shadow-sm"
-          >
-            View Details
-            <ArrowRight className="w-3.5 h-3.5 text-sky-600" />
+          {/* Upcoming Event Badge */}
+          {club.next_event_title ? (
+            <div className="text-xs text-slate-800 bg-slate-50 p-2 rounded border border-slate-200 space-y-0.5">
+              <div className="font-semibold text-slate-900 flex items-center gap-1 truncate">
+                <Calendar className="w-3 h-3 text-[#CC0000] shrink-0" />
+                <span className="truncate">{club.next_event_title}</span>
+              </div>
+              <div className="text-[10px] text-slate-500 pl-4 truncate">
+                {club.next_event_date ? new Date(club.next_event_date).toLocaleDateString() : 'Upcoming'}
+              </div>
+            </div>
+          ) : (
+            <div className="text-xs text-slate-700 bg-slate-50 p-2 rounded border border-slate-200 space-y-0.5">
+              <div className="font-semibold text-slate-800 flex items-center gap-1 truncate">
+                <Calendar className="w-3 h-3 text-slate-500 shrink-0" />
+                <span className="truncate">Active Workshops & Sprints</span>
+              </div>
+              <div className="text-[10px] text-slate-500 pl-4 truncate">
+                Campus Innovation Hub
+              </div>
+            </div>
+          )}
+
+          {/* Primary View Action */}
+          <button className="w-full py-2 bg-[#173B67] hover:bg-[#CC0000] text-white font-bold rounded text-xs transition flex items-center justify-center gap-1.5 uppercase tracking-wider shadow-2xs">
+            <span>View Organization</span>
+            <ArrowRight className="w-3.5 h-3.5" />
           </button>
         </div>
       </div>

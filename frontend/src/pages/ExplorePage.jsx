@@ -1,65 +1,115 @@
 import React from 'react';
-import { Compass, Sparkles, Trophy, Users, Rocket, Calendar, Bookmark, Search } from 'lucide-react';
-import { useAuth } from '../context/AuthContext';
+import { Search, Users, Calendar, Sparkles, Filter } from 'lucide-react';
 import FilterBar from '../components/FilterBar';
 import ClubCard from '../components/ClubCard';
-import ClubSlideshow from '../components/ClubSlideshow';
+import AnnouncementsFeed from '../components/AnnouncementsFeed';
 
 export default function ExplorePage({
-  clubs,
-  search,
+  clubs = [],
+  search = '',
   setSearch,
-  selectedCategory,
+  selectedCategory = 'All',
   setSelectedCategory,
   onSelectClub,
   onToggleSave,
-  savedClubIds,
-  onOpenMatch
+  savedClubIds = new Set()
 }) {
-  const { user } = useAuth();
-  const userName = user?.name ? user.name.split(' ')[0] : 'Rishik';
+  const safeClubs = Array.isArray(clubs) ? clubs : [];
 
   return (
-    <div className="max-w-7xl mx-auto space-y-6">
-      {/* Student Home Summary / Dashboard Header */}
-      <div className="bg-gradient-to-r from-slate-900 via-sky-950 to-slate-900 rounded-3xl p-6 sm:p-7 text-white shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-6 border border-slate-800">
-        <div>
-          <div className="flex items-center gap-2 mb-1">
-            <span className="text-xs font-bold text-sky-400 uppercase tracking-wider">Campus Dashboard</span>
-            <span className="inline-block w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
-          </div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight">
-            Good evening, {userName} 👋
-          </h1>
-          <p className="text-xs sm:text-sm text-slate-300 mt-1 max-w-xl">
-            Discover your campus community. Explore 48 official student organizations, hackathons, and activities.
-          </p>
-        </div>
+    <div className="space-y-8">
+      {/* 🏛️ Utah Campus Connect Hero Banner */}
+      <div className="relative rounded-xl overflow-hidden shadow-md bg-slate-900 border border-slate-200">
+        {/* Campus Background Image */}
+        <div 
+          className="absolute inset-0 bg-cover bg-center opacity-40 mix-blend-overlay"
+          style={{
+            backgroundImage: `url('https://images.unsplash.com/photo-1541339907198-e08756dedf3f?auto=format&fit=crop&w=1600&q=80')`
+          }}
+        />
 
-        {/* Quick Stat Counter Cards */}
-        <div className="flex items-center gap-3 shrink-0">
-          <div className="bg-white/10 backdrop-blur-md px-4 py-2.5 rounded-2xl border border-white/10 text-center min-w-[90px]">
-            <span className="block text-xl font-black text-white">{clubs.length > 0 ? clubs.length : 48}</span>
-            <span className="text-[10px] font-bold text-slate-300 uppercase tracking-wider">Clubs</span>
+        {/* Hero Content Overlay */}
+        <div className="relative z-10 py-12 px-6 sm:px-12 text-center text-white max-w-4xl mx-auto space-y-6">
+          <div className="space-y-2">
+            <span className="text-xs font-bold uppercase tracking-widest text-red-300">
+              UNIVERSITY STUDENT ENGAGEMENT PORTAL
+            </span>
+            <h1 className="text-2xl sm:text-4xl font-extrabold tracking-tight text-white drop-shadow-sm">
+              Discover unique opportunities at College Club Manager
+            </h1>
           </div>
-          <div className="bg-white/10 backdrop-blur-md px-4 py-2.5 rounded-2xl border border-white/10 text-center min-w-[90px]">
-            <span className="block text-xl font-black text-emerald-400">12</span>
-            <span className="text-[10px] font-bold text-slate-300 uppercase tracking-wider">Events</span>
-          </div>
-          <div className="bg-white/10 backdrop-blur-md px-4 py-2.5 rounded-2xl border border-white/10 text-center min-w-[90px]">
-            <span className="block text-xl font-black text-sky-400">{savedClubIds?.size || 0}</span>
-            <span className="text-[10px] font-bold text-slate-300 uppercase tracking-wider">Saved</span>
+
+          {/* Prominent Search Bar (Utah Campus Connect style) */}
+          <div className="max-w-2xl mx-auto bg-white/95 backdrop-blur-sm p-2 rounded-lg shadow-lg border border-white/40 flex items-center gap-2">
+            <Search className="w-5 h-5 text-slate-400 ml-3 shrink-0" />
+            <input
+              type="text"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search Events, Organizations, and Campus News..."
+              className="w-full bg-transparent text-sm font-medium text-slate-900 placeholder:text-slate-500 focus:outline-none px-2"
+            />
+            <button
+              onClick={() => {}}
+              className="px-5 py-2.5 bg-[#CC0000] hover:bg-[#B30000] text-white font-bold text-xs uppercase tracking-wider rounded transition shrink-0 shadow-2xs"
+            >
+              Search
+            </button>
           </div>
         </div>
       </div>
 
-      {/* Featured Clubs Hero Slideshow / Carousel */}
-      <ClubSlideshow
-        clubs={clubs}
-        onSelectClub={onSelectClub}
-        onToggleSave={onToggleSave}
-        savedClubIds={savedClubIds}
-      />
+      {/* 3 Quick Feature Overview Cards (Utah Campus Connect Style) */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-2xs hover:border-slate-300 transition text-center space-y-3">
+          <div className="w-12 h-12 rounded-full bg-red-50 border border-red-100 flex items-center justify-center text-[#CC0000] mx-auto">
+            <Users className="w-6 h-6" />
+          </div>
+          <h3 className="font-bold text-sm text-slate-900 border-b-2 border-[#CC0000] pb-1 inline-block">
+            Find Organizations
+          </h3>
+          <p className="text-xs text-slate-500 leading-relaxed">
+            Join a student organization and build lasting connections across campus departments.
+          </p>
+        </div>
+
+        <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-2xs hover:border-slate-300 transition text-center space-y-3">
+          <div className="w-12 h-12 rounded-full bg-red-50 border border-red-100 flex items-center justify-center text-[#CC0000] mx-auto">
+            <Calendar className="w-6 h-6" />
+          </div>
+          <h3 className="font-bold text-sm text-slate-900 border-b-2 border-[#CC0000] pb-1 inline-block">
+            Attend Events
+          </h3>
+          <p className="text-xs text-slate-500 leading-relaxed">
+            Discover workshops, hackathons, guest lectures, and activities happening across campus.
+          </p>
+        </div>
+
+        <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-2xs hover:border-slate-300 transition text-center space-y-3">
+          <div className="w-12 h-12 rounded-full bg-red-50 border border-red-100 flex items-center justify-center text-[#CC0000] mx-auto">
+            <Sparkles className="w-6 h-6" />
+          </div>
+          <h3 className="font-bold text-sm text-slate-900 border-b-2 border-[#CC0000] pb-1 inline-block">
+            Track Involvement
+          </h3>
+          <p className="text-xs text-slate-500 leading-relaxed">
+            Get personalized club recommendations matched to your branch, section, and skills.
+          </p>
+        </div>
+      </div>
+
+      {/* Directory Section Header */}
+      <div className="space-y-1 pt-4 border-t border-slate-200">
+        <h2 className="text-xl sm:text-2xl font-extrabold text-slate-900 tracking-tight flex items-center gap-2">
+          <span>Campus Organizations</span>
+          <span className="text-xs font-bold px-2.5 py-0.5 rounded bg-slate-100 text-slate-600 border border-slate-200">
+            {safeClubs.length} Active
+          </span>
+        </h2>
+        <p className="text-xs text-slate-500">
+          Browse and filter official university student organizations.
+        </p>
+      </div>
 
       {/* Filter and Search Bar */}
       <FilterBar
@@ -67,43 +117,51 @@ export default function ExplorePage({
         setSearch={setSearch}
         selectedCategory={selectedCategory}
         setSelectedCategory={setSelectedCategory}
-        totalClubs={clubs.length}
+        totalClubs={safeClubs.length}
       />
 
-      {/* Prominent 3-Column Club Cards Grid */}
-      {clubs.length === 0 ? (
-        <div className="text-center py-20 bg-white rounded-3xl border border-slate-200 p-8 shadow-sm">
-          <div className="w-14 h-14 rounded-3xl bg-sky-50 text-sky-600 flex items-center justify-center mx-auto mb-4 border border-sky-100 shadow-inner">
-            <Search className="w-7 h-7" />
-          </div>
-          <h3 className="text-base font-extrabold text-slate-900">No clubs found</h3>
-          <p className="text-xs text-slate-500 mt-1 max-w-sm mx-auto leading-relaxed">
-            Try searching for another keyword or clear the category filter to explore all 48 campus clubs.
-          </p>
-          <button
-            onClick={() => {
-              setSearch('');
-              setSelectedCategory('All');
-            }}
-            className="mt-4 px-5 py-2 rounded-xl text-xs font-bold text-white bg-slate-900 hover:bg-slate-800 transition"
-          >
-            Clear Filters & View All Clubs
-          </button>
+      {/* Main Grid + Announcements Right Sidebar */}
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+        {/* Left 3 Columns: Penn Clubs Style Club Cards */}
+        <div className="lg:col-span-3 space-y-6">
+          {safeClubs.length === 0 ? (
+            <div className="text-center py-16 bg-white rounded-xl border border-slate-200 p-8 shadow-2xs">
+              <Search className="w-8 h-8 text-slate-400 mx-auto mb-3" />
+              <h3 className="text-sm font-bold text-slate-900">No clubs found</h3>
+              <p className="text-xs text-slate-500 mt-1 max-w-sm mx-auto">
+                Try adjusting your search terms or category filter to explore all available campus clubs.
+              </p>
+              <button
+                onClick={() => {
+                  setSearch('');
+                  setSelectedCategory('All');
+                }}
+                className="mt-4 px-4 py-2 rounded text-xs font-bold text-white bg-[#CC0000] hover:bg-[#B30000] transition shadow-2xs"
+              >
+                Clear Filters
+              </button>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+              {safeClubs.map((club) => (
+                <ClubCard
+                  key={club.id}
+                  club={club}
+                  onSelect={onSelectClub}
+                  onToggleSave={onToggleSave}
+                  isSaved={savedClubIds.has(club.id)}
+                  savedCount={club.saved_count}
+                />
+              ))}
+            </div>
+          )}
         </div>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {clubs.map((club) => (
-            <ClubCard
-              key={club.id}
-              club={club}
-              onSelect={onSelectClub}
-              onToggleSave={onToggleSave}
-              isSaved={savedClubIds.has(club.id)}
-              savedCount={club.saved_count}
-            />
-          ))}
+
+        {/* Right Column: Georgia Tech Engage Style Announcements Widget */}
+        <div className="lg:col-span-1">
+          <AnnouncementsFeed />
         </div>
-      )}
+      </div>
     </div>
   );
 }

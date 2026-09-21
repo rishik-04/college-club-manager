@@ -12,9 +12,8 @@ from .routers import (
     saved_routes,
     admin_routes,
     ai_routes,
-    application_routes,
-    ticket_routes,
-    announcement_routes
+    announcement_routes,
+    membership_routes
 )
 
 @asynccontextmanager
@@ -30,8 +29,8 @@ async def lifespan(app: FastAPI):
     yield
 
 app = FastAPI(
-    title="College Club Manager API — Enterprise Edition",
-    description="Backend API for College Club Manager with Auth, RBAC, Clubs, Events, In-App Applications, Recruitment Kanban, QR Event Ticketing, Gate Check-in, Newsfeed, and AI Assistant.",
+    title="College Club Manager API",
+    description="Backend API for College Club Manager with Auth, RBAC, Clubs, Memberships, Demographics Analytics, Events, Saved Clubs, Newsfeed, and AI Assistant.",
     version="2.0.0",
     lifespan=lifespan
 )
@@ -48,12 +47,11 @@ app.add_middleware(
 # Mount Routers
 app.include_router(auth_routes.router)
 app.include_router(club_routes.router)
+app.include_router(membership_routes.router)
 app.include_router(event_routes.router)
 app.include_router(saved_routes.router)
 app.include_router(admin_routes.router)
 app.include_router(ai_routes.router)
-app.include_router(application_routes.router)
-app.include_router(ticket_routes.router)
 app.include_router(announcement_routes.router)
 
 @app.get("/")

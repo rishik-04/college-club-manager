@@ -1,21 +1,19 @@
 import React, { useState } from 'react';
-import { X, Send, Sparkles, Bot, HelpCircle, ArrowRight, BookOpen } from 'lucide-react';
+import { X, Send, Bot, ArrowRight } from 'lucide-react';
 import { api } from '../services/api';
 
 const SAMPLE_QUESTIONS = [
-  "Which clubs are related to AI and Machine Learning?",
-  "What major upcoming bootcamps or hackathons are scheduled?",
-  "Who can apply? Are first-year beginners allowed?",
-  "How do I submit an application form to join a club?"
+  "Which clubs focus on AI?",
+  "What events are upcoming?",
+  "How do I apply to a club?"
 ];
 
 export default function AskClubAssistant({ isOpen, onClose, onSelectClub }) {
   const [messages, setMessages] = useState([
     {
       role: 'assistant',
-      text: "Hello! I'm your College Club Advisor. Ask me anything about our campus clubs, upcoming workshops, eligibility guidelines, or how to apply!",
-      relatedClubs: [],
-      sources: []
+      text: "Hi! I can help you find clubs, events and application details. What would you like to know?",
+      relatedClubs: []
     }
   ]);
   const [input, setInput] = useState('');
@@ -39,8 +37,7 @@ export default function AskClubAssistant({ isOpen, onClose, onSelectClub }) {
         {
           role: 'assistant',
           text: response.answer,
-          relatedClubs: response.related_clubs || [],
-          sources: response.sources || []
+          relatedClubs: response.related_clubs || []
         }
       ]);
     } catch (err) {
@@ -48,9 +45,8 @@ export default function AskClubAssistant({ isOpen, onClose, onSelectClub }) {
         ...prev,
         {
           role: 'assistant',
-          text: "Sorry, I couldn't reach the club database right now. Please try again or explore clubs from the catalog!",
-          relatedClubs: [],
-          sources: []
+          text: "Sorry, I couldn't connect right now. Please explore clubs from the catalog!",
+          relatedClubs: []
         }
       ]);
     } finally {
@@ -59,33 +55,28 @@ export default function AskClubAssistant({ isOpen, onClose, onSelectClub }) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 overflow-hidden bg-slate-900/50 backdrop-blur-sm flex justify-end animate-in fade-in duration-200">
+    <div className="fixed inset-0 z-50 overflow-hidden bg-[#0B1120]/70 backdrop-blur-sm flex justify-end">
       <div 
-        className="w-full max-w-lg bg-white h-full shadow-2xl flex flex-col border-l border-slate-200 animate-in slide-in-from-right duration-300"
+        className="w-full max-w-md bg-[#111827] h-full shadow-2xl flex flex-col border-l border-[#1E293B]"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="p-4 border-b border-slate-100 flex items-center justify-between bg-gradient-to-r from-sky-50 to-indigo-50">
-          <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-sky-600 to-indigo-600 text-white flex items-center justify-center shadow-md shadow-sky-500/20">
-              <Bot className="w-5 h-5" />
+        <div className="p-4 border-b border-[#1E293B] flex items-center justify-between bg-[#0B1120]">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-lg bg-blue-600/20 border border-blue-500/30 text-blue-400 flex items-center justify-center">
+              <Bot className="w-4 h-4" />
             </div>
             <div>
-              <h3 className="font-extrabold text-sm text-slate-900 flex items-center gap-1.5">
-                Club Assistant ✨
-                <span className="px-1.5 py-0.5 rounded text-[10px] font-extrabold bg-sky-200 text-sky-800">
-                  AI
-                </span>
-              </h3>
-              <p className="text-[11px] text-slate-500">Ask about recruitment, events, and campus life</p>
+              <h3 className="font-bold text-sm text-white">Club Assistant</h3>
+              <p className="text-[11px] text-slate-400">Ask about clubs and events</p>
             </div>
           </div>
 
           <button
             onClick={onClose}
-            className="p-1.5 rounded-lg hover:bg-slate-200/60 text-slate-400 hover:text-slate-700 transition"
+            className="p-1.5 rounded-lg hover:bg-slate-800 text-slate-400 hover:text-white transition"
           >
-            <X className="w-5 h-5" />
+            <X className="w-4 h-4" />
           </button>
         </div>
 
@@ -97,10 +88,10 @@ export default function AskClubAssistant({ isOpen, onClose, onSelectClub }) {
               className={`flex flex-col ${msg.role === 'user' ? 'items-end' : 'items-start'}`}
             >
               <div
-                className={`max-w-[85%] rounded-2xl p-3.5 text-xs sm:text-sm leading-relaxed ${
+                className={`max-w-[85%] rounded-lg p-3 text-xs leading-relaxed ${
                   msg.role === 'user'
-                    ? 'bg-sky-600 text-white rounded-br-none shadow-sm'
-                    : 'bg-slate-100 text-slate-800 rounded-bl-none border border-slate-200/60'
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-[#0B1120] text-slate-300 border border-[#1E293B]'
                 }`}
               >
                 <p className="whitespace-pre-line">{msg.text}</p>
@@ -108,7 +99,7 @@ export default function AskClubAssistant({ isOpen, onClose, onSelectClub }) {
 
               {/* Related Clubs Chips */}
               {msg.relatedClubs && msg.relatedClubs.length > 0 && (
-                <div className="mt-2.5 flex flex-wrap gap-1.5 max-w-[85%]">
+                <div className="mt-2 flex flex-wrap gap-1.5 max-w-[85%]">
                   {msg.relatedClubs.map((rc) => (
                     <button
                       key={rc.id}
@@ -116,20 +107,12 @@ export default function AskClubAssistant({ isOpen, onClose, onSelectClub }) {
                         onClose();
                         onSelectClub(rc.id);
                       }}
-                      className="px-2.5 py-1 rounded-lg text-xs font-semibold bg-white border border-sky-200 text-sky-700 hover:bg-sky-50 transition flex items-center gap-1 shadow-sm"
+                      className="px-2.5 py-1 rounded text-xs font-semibold bg-[#0B1120] border border-[#1E293B] text-blue-400 hover:bg-slate-800 transition flex items-center gap-1"
                     >
                       <span>{rc.name}</span>
-                      <ArrowRight className="w-3 h-3 text-sky-400" />
+                      <ArrowRight className="w-3 h-3" />
                     </button>
                   ))}
-                </div>
-              )}
-
-              {/* Sources */}
-              {msg.sources && msg.sources.length > 0 && (
-                <div className="mt-1 flex items-center gap-1 text-[10px] text-slate-400">
-                  <BookOpen className="w-3 h-3" />
-                  <span>Sources: {msg.sources.join(', ')}</span>
                 </div>
               )}
             </div>
@@ -137,33 +120,30 @@ export default function AskClubAssistant({ isOpen, onClose, onSelectClub }) {
 
           {loading && (
             <div className="flex items-center gap-2 text-xs text-slate-400 italic">
-              <div className="w-4 h-4 border-2 border-sky-500 border-t-transparent rounded-full animate-spin"></div>
-              Analyzing club data & drafting advice...
+              <div className="w-3.5 h-3.5 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+              Thinking...
             </div>
           )}
         </div>
 
-        {/* Suggested Quick Prompt Chips */}
-        <div className="p-3 border-t border-slate-100 bg-slate-50/50 space-y-1.5">
-          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1">
-            <HelpCircle className="w-3 h-3" /> Quick questions
-          </p>
-          <div className="flex gap-1.5 overflow-x-auto pb-1 no-scrollbar">
+        {/* Quick Sample Prompts */}
+        <div className="p-3 border-t border-[#1E293B] bg-[#0B1120] space-y-1.5">
+          <div className="flex gap-1.5 overflow-x-auto pb-1 scrollbar-none">
             {SAMPLE_QUESTIONS.map((q, i) => (
               <button
                 key={i}
                 onClick={() => handleSend(q)}
                 disabled={loading}
-                className="px-2.5 py-1 rounded-lg text-[11px] font-medium bg-white border border-slate-200 text-slate-600 hover:text-sky-700 hover:border-sky-300 hover:bg-sky-50/50 whitespace-nowrap transition"
+                className="px-2.5 py-1 rounded text-[11px] font-medium bg-[#111827] border border-[#1E293B] text-slate-300 hover:text-white hover:border-blue-500 whitespace-nowrap transition"
               >
-                {q}
+                [{q}]
               </button>
             ))}
           </div>
         </div>
 
         {/* Input Bar */}
-        <div className="p-3 bg-white border-t border-slate-200">
+        <div className="p-3 bg-[#111827] border-t border-[#1E293B]">
           <form
             onSubmit={(e) => {
               e.preventDefault();
@@ -175,16 +155,16 @@ export default function AskClubAssistant({ isOpen, onClose, onSelectClub }) {
               type="text"
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              placeholder="Ask a question about clubs..."
+              placeholder="Ask about clubs..."
               disabled={loading}
-              className="flex-1 px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 transition"
+              className="flex-1 px-3 py-2 bg-[#0B1120] border border-[#1E293B] focus:border-blue-500 rounded-lg text-xs text-white focus:outline-none transition"
             />
             <button
               type="submit"
               disabled={!input.trim() || loading}
-              className="p-2.5 rounded-xl bg-sky-600 hover:bg-sky-700 disabled:opacity-40 text-white transition shadow-sm"
+              className="p-2 rounded-lg bg-blue-600 hover:bg-blue-500 disabled:opacity-40 text-white transition"
             >
-              <Send className="w-4 h-4" />
+              <Send className="w-3.5 h-3.5" />
             </button>
           </form>
         </div>

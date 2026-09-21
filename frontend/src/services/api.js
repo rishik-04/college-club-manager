@@ -104,64 +104,110 @@ export const api = {
       });
       return handleResponse(res);
     },
-  },
-
-  // Applications & Recruitment Kanban (Phase 26)
-  applications: {
-    apply: async (clubId, appData) => {
-      const res = await fetch(`${API_BASE}/clubs/${clubId}/apply`, {
+    addBoardMember: async (clubId, memberData) => {
+      const res = await fetch(`${API_BASE}/clubs/${clubId}/board-members`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           ...getAuthHeader(),
         },
-        body: JSON.stringify(appData),
+        body: JSON.stringify(memberData),
       });
       return handleResponse(res);
     },
-    getMyApplications: async () => {
-      const res = await fetch(`${API_BASE}/users/me/applications`, {
-        headers: { ...getAuthHeader() },
-      });
-      return handleResponse(res);
-    },
-    getClubApplications: async (clubId) => {
-      const res = await fetch(`${API_BASE}/clubs/${clubId}/applications`, {
-        headers: { ...getAuthHeader() },
-      });
-      return handleResponse(res);
-    },
-    getAllApplications: async () => {
-      const res = await fetch(`${API_BASE}/admin/applications`, {
-        headers: { ...getAuthHeader() },
-      });
-      return handleResponse(res);
-    },
-    updateStatus: async (appId, status, admin_notes = '') => {
-      const res = await fetch(`${API_BASE}/applications/${appId}/status`, {
+    updateBoardMember: async (clubId, memberId, memberData) => {
+      const res = await fetch(`${API_BASE}/clubs/${clubId}/board-members/${memberId}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
           ...getAuthHeader(),
         },
-        body: JSON.stringify({ status, admin_notes }),
+        body: JSON.stringify(memberData),
+      });
+      return handleResponse(res);
+    },
+    deleteBoardMember: async (clubId, memberId) => {
+      const res = await fetch(`${API_BASE}/clubs/${clubId}/board-members/${memberId}`, {
+        method: 'DELETE',
+        headers: { ...getAuthHeader() },
+      });
+      return handleResponse(res);
+    },
+
+    // Demographics Analytics & Roster APIs
+    getAnalytics: async (clubId) => {
+      const res = await fetch(`${API_BASE}/clubs/${clubId}/analytics`, {
+        headers: { ...getAuthHeader() },
+      });
+      return handleResponse(res);
+    },
+    getMembers: async (clubId) => {
+      const res = await fetch(`${API_BASE}/clubs/${clubId}/members`, {
+        headers: { ...getAuthHeader() },
+      });
+      return handleResponse(res);
+    },
+    addMember: async (clubId, studentId) => {
+      const res = await fetch(`${API_BASE}/clubs/${clubId}/members`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...getAuthHeader(),
+        },
+        body: JSON.stringify({ student_id: Number(studentId) }),
+      });
+      return handleResponse(res);
+    },
+    removeMember: async (clubId, studentId) => {
+      const res = await fetch(`${API_BASE}/clubs/${clubId}/members/${studentId}`, {
+        method: 'DELETE',
+        headers: { ...getAuthHeader() },
       });
       return handleResponse(res);
     },
   },
 
-  // Events & QR Ticketing (Phase 27)
+  // Events
   events: {
     getAll: async ({ filter_type = 'all', club_id = null } = {}) => {
       const params = new URLSearchParams();
       if (filter_type) params.append('filter_type', filter_type);
       if (club_id) params.append('club_id', club_id);
-      const res = await fetch(`${API_BASE}/events?${params.toString()}`);
+      const res = await fetch(`${API_BASE}/events?${params.toString()}`, {
+        headers: { ...getAuthHeader() }
+      });
+      return handleResponse(res);
+    },
+    register: async (eventId) => {
+      const res = await fetch(`${API_BASE}/events/${eventId}/register`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...getAuthHeader(),
+        },
+      });
+      return handleResponse(res);
+    },
+    getMyRegistrations: async () => {
+      const res = await fetch(`${API_BASE}/events/my-registrations`, {
+        headers: { ...getAuthHeader() },
+      });
       return handleResponse(res);
     },
     create: async (clubId, eventData) => {
       const res = await fetch(`${API_BASE}/clubs/${clubId}/events`, {
         method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...getAuthHeader(),
+        },
+        body: JSON.stringify(eventData),
+      });
+      return handleResponse(res);
+    },
+    update: async (eventId, eventData) => {
+      const res = await fetch(`${API_BASE}/events/${eventId}`, {
+        method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
           ...getAuthHeader(),
@@ -177,42 +223,39 @@ export const api = {
       });
       return handleResponse(res);
     },
-    rsvp: async (eventId) => {
-      const res = await fetch(`${API_BASE}/events/${eventId}/rsvp`, {
-        method: 'POST',
-        headers: { ...getAuthHeader() },
-      });
-      return handleResponse(res);
-    },
-    getMyTickets: async () => {
-      const res = await fetch(`${API_BASE}/users/me/tickets`, {
-        headers: { ...getAuthHeader() },
-      });
-      return handleResponse(res);
-    },
-    checkIn: async (eventId, ticket_code) => {
-      const res = await fetch(`${API_BASE}/events/${eventId}/check-in`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...getAuthHeader(),
-        },
-        body: JSON.stringify({ ticket_code }),
-      });
-      return handleResponse(res);
-    },
   },
 
-  // Announcements Newsfeed (Phase 28)
+  // Announcements Newsfeed
   announcements: {
-    getAll: async (clubId = null) => {
+    getAll: async (clubIdOrOptions = null) => {
+      let clubId = clubIdOrOptions;
+      if (typeof clubIdOrOptions === 'object' && clubIdOrOptions !== null) {
+        clubId = clubIdOrOptions.club_id;
+      }
       const params = clubId ? `?club_id=${clubId}` : '';
       const res = await fetch(`${API_BASE}/announcements${params}`);
+      return handleResponse(res);
+    },
+    getNotifications: async () => {
+      const res = await fetch(`${API_BASE}/notifications`, {
+        headers: { ...getAuthHeader() }
+      });
       return handleResponse(res);
     },
     create: async (clubId, annData) => {
       const res = await fetch(`${API_BASE}/clubs/${clubId}/announcements`, {
         method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...getAuthHeader(),
+        },
+        body: JSON.stringify(annData),
+      });
+      return handleResponse(res);
+    },
+    update: async (id, annData) => {
+      const res = await fetch(`${API_BASE}/announcements/${id}`, {
+        method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
           ...getAuthHeader(),
@@ -276,6 +319,36 @@ export const api = {
           ...getAuthHeader(),
         },
         body: JSON.stringify({ role }),
+      });
+      return handleResponse(res);
+    },
+    getMyClub: async () => {
+      const res = await fetch(`${API_BASE}/admin/my-club`, {
+        headers: { ...getAuthHeader() },
+      });
+      return handleResponse(res);
+    },
+    getAssignments: async () => {
+      const res = await fetch(`${API_BASE}/admin/assignments`, {
+        headers: { ...getAuthHeader() },
+      });
+      return handleResponse(res);
+    },
+    assignClubAdmin: async (userId, clubId) => {
+      const res = await fetch(`${API_BASE}/admin/assignments`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...getAuthHeader(),
+        },
+        body: JSON.stringify({ user_id: userId, club_id: clubId }),
+      });
+      return handleResponse(res);
+    },
+    deleteAssignment: async (assignmentId) => {
+      const res = await fetch(`${API_BASE}/admin/assignments/${assignmentId}`, {
+        method: 'DELETE',
+        headers: { ...getAuthHeader() },
       });
       return handleResponse(res);
     },

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { api } from './services/api';
 import { useAuth } from './context/AuthContext';
 
@@ -8,23 +9,29 @@ import ClubDetailModal from './components/ClubDetailModal';
 import AuthModal from './components/AuthModal';
 import AskClubAssistant from './components/AskClubAssistant';
 import RecommendationModal from './components/RecommendationModal';
-import AdminDashboard from './components/AdminDashboard';
-import ApplicationModal from './components/ApplicationModal';
-import KanbanBoard from './components/KanbanBoard';
-import CampusFeed from './components/CampusFeed';
+import StudentLayout from './components/StudentLayout';
+
+import RoleSelection from './pages/RoleSelection';
+import StudentLogin from './pages/StudentLogin';
+import StudentRegister from './pages/StudentRegister';
+import ClubAdminLogin from './pages/ClubAdminLogin';
+import AdminLogin from './pages/AdminLogin';
 
 import ExplorePage from './pages/ExplorePage';
 import EventsPage from './pages/EventsPage';
 import SavedClubsPage from './pages/SavedClubsPage';
+import MyClubsPage from './pages/MyClubsPage';
 import ProfilePage from './pages/ProfilePage';
+import ClubAdminPortal from './pages/ClubAdmin/ClubAdminPortal';
+import SuperAdminPortal from './pages/SuperAdmin/SuperAdminPortal';
 
 export default function App() {
   const { user } = useAuth();
+  const location = useLocation();
+  const navigate = useNavigate();
 
   // Navigation & Modals
-  const [activeTab, setActiveTab] = useState('explore'); // explore, feed, events, saved, match, kanban, admin, profile
   const [selectedClubId, setSelectedClubId] = useState(null);
-  const [applyingClub, setApplyingClub] = useState(null);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [isAssistantOpen, setIsAssistantOpen] = useState(false);
 
@@ -66,7 +73,7 @@ export default function App() {
   const handleToggleSave = async (clubId) => {
     if (!user) {
       showToast('Please sign in to save clubs to your shortlist', 'error');
-      setIsAuthModalOpen(true);
+      navigate('/student-login');
       return;
     }
 
@@ -106,88 +113,180 @@ export default function App() {
     }
   };
 
+  const isAuthPage = [
+    '/roles',
+    '/student-login',
+    '/student-register',
+    '/club-admin-login',
+    '/admin-login',
+  ].includes(location.pathname);
+
+  // Determine current tab from path for Navbar highlighting
+  let currentTab = 'explore';
+  if (location.pathname === '/events') currentTab = 'events';
+  else if (location.pathname === '/saved') currentTab = 'saved';
+  else if (location.pathname === '/match') currentTab = 'match';
+  else if (location.pathname === '/club-admin') currentTab = 'club-admin';
+  else if (location.pathname === '/super-admin') currentTab = 'super-admin';
+
   return (
-    <div className="min-h-screen flex flex-col bg-slate-50 text-slate-900">
-      {/* Navbar */}
-      <Navbar
-        activeTab={activeTab}
-        setActiveTab={setActiveTab}
-        onOpenAuth={() => setIsAuthModalOpen(true)}
-        savedCount={savedClubIds.size}
-        onOpenAssistant={() => setIsAssistantOpen(true)}
-      />
+    <div className="min-h-screen flex flex-col bg-[#F8FAFC] text-[#0F172A]">
+      {/* Navbar (hidden on auth & role selection screens) */}
+      {!isAuthPage && (
+        <Navbar
+          activeTab={currentTab}
+          setActiveTab={(tab) => {
+            if (tab === 'club-admin') navigate('/club-admin');
+            else if (tab === 'super-admin') navigate('/super-admin');
+            else if (tab === 'events') navigate('/events');
+            else if (tab === 'saved') navigate('/saved');
+            else if (tab === 'match') navigate('/match');
+            else navigate('/explore');
+          }}
+          onOpenAuth={() => navigate('/student-login')}
+          savedCount={savedClubIds.size}
+          onOpenAssistant={() => setIsAssistantOpen(true)}
+        />
+      )}
 
       {/* Main View */}
-      <main className="flex-1 py-8 px-4 sm:px-6 lg:px-8">
-        {activeTab === 'explore' && (
-          <ExplorePage
-            clubs={clubs}
-            search={search}
-            setSearch={setSearch}
-            selectedCategory={selectedCategory}
-            setSelectedCategory={setSelectedCategory}
-            onSelectClub={(id) => setSelectedClubId(id)}
-            onToggleSave={handleToggleSave}
-            savedClubIds={savedClubIds}
-            onOpenMatch={() => setActiveTab('match')}
+      <main className="flex-1">
+        <Routes>
+          <Route path="/" element={<Navigate to="/roles" replace />} />
+          <Route path="/roles" element={<RoleSelection />} />
+
+          <Route path="/student-login" element={<StudentLogin />} />
+          <Route path="/student-register" element={<StudentRegister />} />
+          <Route path="/club-admin-login" element={<ClubAdminLogin />} />
+          <Route path="/admin-login" element={<AdminLogin />} />
+
+          <Route
+            path="/explore"
+            element={
+              <StudentLayout onOpenAssistant={() => setIsAssistantOpen(true)}>
+                <ExplorePage
+                  clubs={clubs}
+                  search={search}
+                  setSearch={setSearch}
+                  selectedCategory={selectedCategory}
+                  setSelectedCategory={setSelectedCategory}
+                  onSelectClub={(id) => setSelectedClubId(id)}
+                  onToggleSave={handleToggleSave}
+                  savedClubIds={savedClubIds}
+                  onOpenMatch={() => navigate('/match')}
+                />
+              </StudentLayout>
+            }
           />
-        )}
 
-        {activeTab === 'feed' && (
-          <CampusFeed
-            onShowToast={showToast}
-            onSelectClub={(id) => setSelectedClubId(id)}
+          <Route
+            path="/clubs"
+            element={
+              <StudentLayout onOpenAssistant={() => setIsAssistantOpen(true)}>
+                <ExplorePage
+                  clubs={clubs}
+                  search={search}
+                  setSearch={setSearch}
+                  selectedCategory={selectedCategory}
+                  setSelectedCategory={setSelectedCategory}
+                  onSelectClub={(id) => setSelectedClubId(id)}
+                  onToggleSave={handleToggleSave}
+                  savedClubIds={savedClubIds}
+                  onOpenMatch={() => navigate('/match')}
+                />
+              </StudentLayout>
+            }
           />
-        )}
 
-        {activeTab === 'events' && (
-          <EventsPage
-            onSelectClub={(id) => setSelectedClubId(id)}
-            onShowToast={showToast}
+          <Route
+            path="/events"
+            element={
+              <StudentLayout onOpenAssistant={() => setIsAssistantOpen(true)}>
+                <EventsPage
+                  onSelectClub={(id) => setSelectedClubId(id)}
+                  onShowToast={showToast}
+                />
+              </StudentLayout>
+            }
           />
-        )}
 
-        {activeTab === 'saved' && (
-          <SavedClubsPage
-            onSelectClub={(id) => setSelectedClubId(id)}
-            onToggleSave={handleToggleSave}
-            savedClubIds={savedClubIds}
-            onExplore={() => setActiveTab('explore')}
+          <Route
+            path="/saved"
+            element={
+              <StudentLayout onOpenAssistant={() => setIsAssistantOpen(true)}>
+                <SavedClubsPage
+                  onSelectClub={(id) => setSelectedClubId(id)}
+                  onToggleSave={handleToggleSave}
+                  savedClubIds={savedClubIds}
+                  onExplore={() => navigate('/explore')}
+                />
+              </StudentLayout>
+            }
           />
-        )}
 
-        {activeTab === 'match' && (
-          <RecommendationModal
-            onSelectClub={(id) => setSelectedClubId(id)}
-            onToggleSave={handleToggleSave}
+          <Route
+            path="/my-clubs"
+            element={
+              <StudentLayout onOpenAssistant={() => setIsAssistantOpen(true)}>
+                <MyClubsPage
+                  onSelectClub={(id) => setSelectedClubId(id)}
+                  onExplore={() => navigate('/explore')}
+                />
+              </StudentLayout>
+            }
           />
-        )}
 
-        {activeTab === 'kanban' && (
-          <KanbanBoard onShowToast={showToast} />
-        )}
-
-        {activeTab === 'admin' && (
-          <AdminDashboard
-            onShowToast={showToast}
-            onRefreshClubs={loadClubs}
+          <Route
+            path="/match"
+            element={
+              <StudentLayout onOpenAssistant={() => setIsAssistantOpen(true)}>
+                <RecommendationModal
+                  onSelectClub={(id) => setSelectedClubId(id)}
+                  onToggleSave={handleToggleSave}
+                />
+              </StudentLayout>
+            }
           />
-        )}
 
-        {activeTab === 'profile' && (
-          <ProfilePage onShowToast={showToast} />
-        )}
+          <Route path="/assistant" element={
+            <StudentLayout onOpenAssistant={() => setIsAssistantOpen(true)}>
+              <div className="py-12 px-4 text-center max-w-xl mx-auto space-y-4">
+                <h2 className="text-2xl font-extrabold text-[#0F172A]">AI Club Assistant ✨</h2>
+                <p className="text-slate-500 text-xs">Ask any question to discover clubs, events, and eligibility criteria across campus.</p>
+                <button
+                  onClick={() => setIsAssistantOpen(true)}
+                  className="px-6 py-3 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl text-sm shadow-xs"
+                >
+                  Open AI Assistant Drawer ✨
+                </button>
+              </div>
+            </StudentLayout>
+          } />
+
+          <Route path="/profile" element={
+            <StudentLayout onOpenAssistant={() => setIsAssistantOpen(true)}>
+              <ProfilePage onShowToast={showToast} />
+            </StudentLayout>
+          } />
+
+          <Route path="/club-admin" element={<ClubAdminPortal />} />
+          <Route path="/super-admin" element={<SuperAdminPortal />} />
+
+          <Route path="*" element={<Navigate to="/roles" replace />} />
+        </Routes>
       </main>
 
       {/* Footer */}
-      <footer className="mt-auto border-t border-slate-200 bg-white py-6 text-center text-xs text-slate-500">
-        <p className="font-semibold text-slate-700">
-          College Club Manager Enterprise Platform — 2026 Edition
-        </p>
-        <p className="text-slate-400 mt-1">
-          FastAPI • SQLAlchemy • React • Recruitment Kanban • Dynamic QR Passes • Newsfeed
-        </p>
-      </footer>
+      {!isAuthPage && (
+        <footer className="mt-auto border-t border-slate-800 bg-slate-900/60 py-6 text-center text-xs text-slate-400">
+          <p className="font-semibold text-slate-300">
+            College Club Manager — Student Discovers ➔ Club Admin Maintains ➔ Main Admin Monitors
+          </p>
+          <p className="text-slate-500 mt-1">
+            FastAPI • SQLAlchemy • React • 3-Tier Governance • Role-Based RBAC • AI Assistant
+          </p>
+        </footer>
+      )}
 
       {/* Modals & Drawers */}
       {selectedClubId && (
@@ -197,24 +296,8 @@ export default function App() {
           onToggleSave={handleToggleSave}
           isSaved={savedClubIds.has(selectedClubId)}
           savedCount={clubs.find((c) => c.id === selectedClubId)?.saved_count || 0}
-          onOpenApply={(club) => setApplyingClub(club)}
         />
       )}
-
-      {applyingClub && (
-        <ApplicationModal
-          club={applyingClub}
-          isOpen={true}
-          onClose={() => setApplyingClub(null)}
-          onShowToast={showToast}
-        />
-      )}
-
-      <AuthModal
-        isOpen={isAuthModalOpen}
-        onClose={() => setIsAuthModalOpen(false)}
-        onShowToast={showToast}
-      />
 
       <AskClubAssistant
         isOpen={isAssistantOpen}
@@ -222,14 +305,16 @@ export default function App() {
         onSelectClub={(id) => setSelectedClubId(id)}
       />
 
-      {/* Floating Ask Club Assistant Button */}
-      <button
-        onClick={() => setIsAssistantOpen(true)}
-        className="fixed bottom-6 left-6 z-40 px-4 py-2.5 rounded-full bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold shadow-xl flex items-center gap-2 border border-slate-700 hover:scale-105 active:scale-95 transition"
-      >
-        <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
-        Ask Club Assistant ✨
-      </button>
+      {/* Floating Ask Club Assistant Button (Students Only) */}
+      {!isAuthPage && (!user || user?.role === 'STUDENT') && (
+        <button
+          onClick={() => setIsAssistantOpen(true)}
+          className="fixed bottom-6 left-6 z-40 px-4 py-2.5 rounded-full bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold shadow-xl flex items-center gap-2 border border-indigo-400/30 hover:scale-105 active:scale-95 transition"
+        >
+          <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
+          Ask Club Assistant ✨
+        </button>
+      )}
 
       <Toast
         message={toast.message}
