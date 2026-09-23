@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { Megaphone, Pin, Bell } from 'lucide-react';
+import { Megaphone, Pin, Bell, X } from 'lucide-react';
 import { api } from '../services/api';
 
 export default function AnnouncementsFeed({ clubId = null }) {
   const [announcements, setAnnouncements] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [selectedAnn, setSelectedAnn] = useState(null);
 
   useEffect(() => {
     fetchAnnouncements();
@@ -69,10 +70,11 @@ export default function AnnouncementsFeed({ clubId = null }) {
           {safeAnnouncements.map((ann) => (
             <div 
               key={ann.id} 
-              className={`p-3.5 rounded-lg border transition relative ${
+              onClick={() => setSelectedAnn(ann)}
+              className={`p-3.5 rounded-lg border transition relative cursor-pointer ${
                 ann.is_pinned 
-                  ? 'bg-amber-50/70 border-amber-200' 
-                  : 'bg-slate-50/80 border-slate-200 hover:bg-slate-100/90'
+                  ? 'bg-amber-50/70 border-amber-200 hover:bg-amber-100/80 hover:shadow-xs' 
+                  : 'bg-slate-50/80 border-slate-200 hover:bg-slate-100/90 hover:shadow-xs'
               }`}
             >
               {ann.is_pinned && (
@@ -97,7 +99,9 @@ export default function AnnouncementsFeed({ clubId = null }) {
 
                 <div className="space-y-1 flex-1 min-w-0">
                   <div className="flex items-center gap-1.5 flex-wrap">
-                    <span className="text-xs font-bold text-[#CC0000] truncate">{ann.club_name}</span>
+                    <span className="text-xs font-bold text-[#CC0000] truncate">
+                      {!ann.club_id ? 'Campus Wide' : ann.club_name}
+                    </span>
                     <span className="text-[10px] text-slate-400">•</span>
                     <span className="text-[10px] text-slate-500 font-medium">
                       {new Date(ann.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
@@ -150,6 +154,65 @@ export default function AnnouncementsFeed({ clubId = null }) {
           </li>
         </ul>
       </div>
+
+      {/* Full Announcement Detail Modal */}
+      {selectedAnn && (
+        <div 
+          className="fixed inset-0 bg-slate-900/50 backdrop-blur-2xs flex items-center justify-center p-4 z-50"
+          onClick={() => setSelectedAnn(null)}
+        >
+          <div 
+            className="bg-white border border-slate-200 p-6 rounded-xl max-w-lg w-full space-y-4 shadow-xl text-slate-900"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex justify-between items-start border-b border-slate-100 pb-3">
+              <div className="space-y-1.5 pr-4">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className={`px-2 py-0.5 rounded text-[10px] font-bold border uppercase tracking-wider ${
+                    !selectedAnn.club_id
+                      ? 'bg-blue-50 text-blue-800 border-blue-200'
+                      : 'bg-red-50 text-[#CC0000] border-red-200'
+                  }`}>
+                    {!selectedAnn.club_id ? 'Campus Wide' : selectedAnn.club_name || 'Organization Notice'}
+                  </span>
+
+                  {selectedAnn.category && (
+                    <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-slate-100 text-slate-700 border border-slate-200">
+                      {selectedAnn.category}
+                    </span>
+                  )}
+
+                  {selectedAnn.is_pinned && (
+                    <span className="inline-flex items-center gap-1 text-[10px] font-bold text-amber-900 bg-amber-100 px-2 py-0.5 rounded border border-amber-300 uppercase">
+                      <Pin className="w-3 h-3 text-amber-700" /> Pinned
+                    </span>
+                  )}
+                </div>
+
+                <h3 className="text-base font-bold text-slate-900 leading-snug">{selectedAnn.title}</h3>
+              </div>
+
+              <button 
+                onClick={() => setSelectedAnn(null)} 
+                className="p-1.5 rounded-md text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="text-xs text-slate-700 leading-relaxed whitespace-pre-wrap max-h-[55vh] overflow-y-auto">
+              {selectedAnn.content}
+            </div>
+
+            <div className="flex justify-between items-center border-t border-slate-100 pt-3 text-[11px] text-slate-500 font-medium">
+              <span>Source: {!selectedAnn.club_id ? 'Campus Wide Announcement' : selectedAnn.club_name}</span>
+              {selectedAnn.created_at && (
+                <span>Posted {new Date(selectedAnn.created_at).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' })}</span>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

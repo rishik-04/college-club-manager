@@ -121,13 +121,25 @@ export default function App() {
     '/admin-login',
   ].includes(location.pathname);
 
-  // Determine current tab from path for Navbar highlighting
+  // Determine current tab from path and search query for Navbar highlighting
+  const searchParams = new URLSearchParams(location.search);
+  const tabQuery = searchParams.get('tab');
+
   let currentTab = 'explore';
-  if (location.pathname === '/events') currentTab = 'events';
-  else if (location.pathname === '/saved') currentTab = 'saved';
-  else if (location.pathname === '/match') currentTab = 'match';
-  else if (location.pathname === '/club-admin') currentTab = 'club-admin';
-  else if (location.pathname === '/super-admin') currentTab = 'super-admin';
+  if (location.pathname === '/super-admin') {
+    if (tabQuery === 'events') currentTab = 'events';
+    else if (tabQuery === 'manage_clubs') currentTab = 'manage_clubs';
+    else currentTab = 'super-admin';
+  } else if (location.pathname === '/club-admin') {
+    if (tabQuery === 'events') currentTab = 'events';
+    else currentTab = 'club-admin';
+  } else if (location.pathname === '/events') {
+    currentTab = 'events';
+  } else if (location.pathname === '/saved') {
+    currentTab = 'saved';
+  } else if (location.pathname === '/match') {
+    currentTab = 'match';
+  }
 
   return (
     <div className="min-h-screen flex flex-col bg-[#F8FAFC] text-[#0F172A]">
@@ -136,9 +148,18 @@ export default function App() {
         <Navbar
           activeTab={currentTab}
           setActiveTab={(tab) => {
-            if (tab === 'club-admin') navigate('/club-admin');
-            else if (tab === 'super-admin') navigate('/super-admin');
-            else if (tab === 'events') navigate('/events');
+            if (tab === 'club-admin') navigate('/club-admin?tab=dashboard');
+            else if (tab === 'super-admin') navigate('/super-admin?tab=dashboard');
+            else if (tab === 'events') {
+              if (user?.role === 'SUPER_ADMIN') navigate('/super-admin?tab=events');
+              else if (user?.role === 'CLUB_ADMIN') navigate('/club-admin?tab=events');
+              else navigate('/events');
+            }
+            else if (tab === 'manage_clubs') {
+              if (user?.role === 'SUPER_ADMIN') navigate('/super-admin?tab=manage_clubs');
+              else if (user?.role === 'CLUB_ADMIN') navigate('/club-admin?tab=dashboard');
+              else navigate('/explore');
+            }
             else if (tab === 'saved') navigate('/saved');
             else if (tab === 'match') navigate('/match');
             else navigate('/explore');

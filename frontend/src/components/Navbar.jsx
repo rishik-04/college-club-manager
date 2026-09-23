@@ -63,25 +63,33 @@ export default function Navbar({
   const isSuperAdmin = user?.role === 'SUPER_ADMIN';
 
   // Institutional Role-Based Navigation Items
-  const navItems = [
-    { id: 'explore', label: 'Clubs', icon: Compass, path: '/explore' },
-    { id: 'events', label: 'Events', icon: Calendar, path: '/events' },
-  ];
-
-  if (!isClubAdmin && !isSuperAdmin) {
-    navItems.push({ id: 'my-clubs', label: 'My Clubs', icon: ShieldCheck, path: '/my-clubs' });
-    navItems.push({ 
-      id: 'saved', 
-      label: 'Saved', 
-      icon: Bookmark, 
-      path: '/saved',
-      badge: savedCount > 0 ? savedCount : null 
-    });
-    navItems.push({ id: 'match', label: 'Club Match', icon: Sparkles, path: '/match' });
+  let navItems = [];
+  if (isSuperAdmin) {
+    navItems = [
+      { id: 'manage_clubs', label: 'Clubs', icon: Compass, path: '/super-admin?tab=manage_clubs' },
+      { id: 'events', label: 'Events', icon: Calendar, path: '/super-admin?tab=events' },
+      { id: 'super-admin', label: 'Campus Admin', icon: Crown, path: '/super-admin?tab=dashboard' },
+    ];
   } else if (isClubAdmin) {
-    navItems.push({ id: 'club-admin', label: 'Club Admin', icon: ShieldCheck, path: '/club-admin' });
-  } else if (isSuperAdmin) {
-    navItems.push({ id: 'super-admin', label: 'Campus Admin', icon: Crown, path: '/super-admin' });
+    navItems = [
+      { id: 'club-admin', label: 'Clubs', icon: Compass, path: '/club-admin?tab=dashboard' },
+      { id: 'events', label: 'Events', icon: Calendar, path: '/club-admin?tab=events' },
+      { id: 'club-admin-portal', label: 'Club Admin', icon: ShieldCheck, path: '/club-admin?tab=dashboard' },
+    ];
+  } else {
+    navItems = [
+      { id: 'explore', label: 'Clubs', icon: Compass, path: '/explore' },
+      { id: 'events', label: 'Events', icon: Calendar, path: '/events' },
+      { id: 'my-clubs', label: 'My Clubs', icon: ShieldCheck, path: '/my-clubs' },
+      { 
+        id: 'saved', 
+        label: 'Saved', 
+        icon: Bookmark, 
+        path: '/saved',
+        badge: savedCount > 0 ? savedCount : null 
+      },
+      { id: 'match', label: 'Club Match', icon: Sparkles, path: '/match' },
+    ];
   }
 
   return (
@@ -93,8 +101,16 @@ export default function Navbar({
           <div 
             className="flex items-center gap-3 cursor-pointer group"
             onClick={() => {
-              setActiveTab('explore');
-              navigate('/explore');
+              if (isSuperAdmin) {
+                setActiveTab('super-admin');
+                navigate('/super-admin?tab=dashboard');
+              } else if (isClubAdmin) {
+                setActiveTab('club-admin');
+                navigate('/club-admin?tab=dashboard');
+              } else {
+                setActiveTab('explore');
+                navigate('/explore');
+              }
             }}
           >
             <div className="w-9 h-9 rounded bg-[#CC0000] flex items-center justify-center text-white font-black text-lg shadow-2xs group-hover:bg-[#B30000] transition">
@@ -104,9 +120,6 @@ export default function Navbar({
               <div className="flex items-center gap-1.5">
                 <span className="font-extrabold text-base text-slate-900 tracking-tight">
                   Campus <span className="text-[#CC0000]">Connect</span>
-                </span>
-                <span className="text-[10px] font-bold px-1.5 py-0.2 rounded bg-slate-100 text-slate-600 border border-slate-200">
-                  UUtah Style
                 </span>
               </div>
               <span className="text-[10px] font-semibold text-slate-500 block -mt-1 tracking-wider uppercase">

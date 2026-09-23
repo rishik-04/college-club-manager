@@ -47,6 +47,7 @@ class Club(Base):
     instagram_url = Column(String(500), nullable=True)
     linkedin_url = Column(String(500), nullable=True)
     website_url = Column(String(500), nullable=True)
+    is_active = Column(Boolean, default=True)
     created_at = Column(DateTime, default=datetime.datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.datetime.utcnow, onupdate=datetime.datetime.utcnow)
 
@@ -114,7 +115,7 @@ class Announcement(Base):
     __tablename__ = "announcements"
 
     id = Column(Integer, primary_key=True, index=True)
-    club_id = Column(Integer, ForeignKey("clubs.id"), nullable=False)
+    club_id = Column(Integer, ForeignKey("clubs.id"), nullable=True)
     title = Column(String(200), nullable=False)
     content = Column(Text, nullable=False)
     category = Column(String(50), default="General")

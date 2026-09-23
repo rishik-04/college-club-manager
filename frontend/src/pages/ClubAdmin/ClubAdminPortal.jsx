@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { api } from '../../services/api';
 import {
@@ -17,17 +18,32 @@ import {
   Clock,
   Award,
   Home,
-  FileText
+  FileText,
+  Pin
 } from 'lucide-react';
 
 export default function ClubAdminPortal() {
   const { user } = useAuth();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const tabParam = searchParams.get('tab');
+
   const [club, setClub] = useState(null);
   const [analytics, setAnalytics] = useState(null);
   const [members, setMembers] = useState([]);
+  const [eventsList, setEventsList] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState('dashboard');
+  const [activeTab, setActiveTab] = useState(tabParam || 'dashboard');
   const [message, setMessage] = useState(null);
+
+  // Sub-tab & Search for Events
+  const [eventTabSub, setEventTabSub] = useState('upcoming');
+  const [eventSearch, setEventSearch] = useState('');
+
+  useEffect(() => {
+    if (tabParam) {
+      setActiveTab(tabParam);
+    }
+  }, [tabParam]);
 
   // Profile Form
   const [profileForm, setProfileForm] = useState({
@@ -84,12 +100,14 @@ export default function ClubAdminPortal() {
           website_url: clubData.website_url || ''
         });
 
-        const [anaData, memData] = await Promise.all([
+        const [anaData, memData, evData] = await Promise.all([
           api.clubs.getAnalytics(clubData.id).catch(() => null),
-          api.clubs.getMembers(clubData.id).catch(() => [])
+          api.clubs.getMembers(clubData.id).catch(() => []),
+          api.events.getAll({ club_id: clubData.id }).catch(() => [])
         ]);
         setAnalytics(anaData);
         setMembers(Array.isArray(memData) ? memData : []);
+        setEventsList(Array.isArray(evData) && evData.length > 0 ? evData : [...(clubData.upcoming_events || []), ...(clubData.past_events || [])]);
       }
     } catch (err) {
       console.error(err);
@@ -192,6 +210,16 @@ export default function ClubAdminPortal() {
     }
   };
 
+  const handleTogglePinAnnouncement = async (annId) => {
+    try {
+      await api.announcements.togglePin(annId);
+      showFeedback('Announcement pin status updated!');
+      await loadMyClub();
+    } catch (err) {
+      showFeedback(err.message, true);
+    }
+  };
+
   const handleAddMember = async (e) => {
     e.preventDefault();
     if (!newStudentId) return;
@@ -255,12 +283,29 @@ export default function ClubAdminPortal() {
     return matchesSearch && matchesYear && matchesBranch;
   });
 
+  const safeEvents = Array.isArray(eventsList) && eventsList.length > 0
+    ? eventsList
+    : [...(club?.upcoming_events || []), ...(club?.past_events || [])];
+
+  const filteredEvents = safeEvents.filter((ev) => {
+    const query = eventSearch.toLowerCase();
+    const matchesSearch =
+      !query ||
+      (ev.title && ev.title.toLowerCase().includes(query)) ||
+      (ev.description && ev.description.toLowerCase().includes(query));
+
+    const isPast = ev.is_past || new Date(ev.event_date) < new Date();
+    const matchesSubTab = eventTabSub === 'past' ? isPast : !isPast;
+
+    return matchesSearch && matchesSubTab;
+  });
+
   const sidebarItems = [
     { id: 'dashboard', label: 'Dashboard', icon: Home },
     { id: 'profile', label: 'Club Profile', icon: Edit2 },
     { id: 'members', label: `Club Members (${safeMembers.length})`, icon: Users },
     { id: 'board', label: `Board Members (${club.board_members?.length || 0})`, icon: Award },
-    { id: 'events', label: `Events (${(club.upcoming_events?.length || 0) + (club.past_events?.length || 0)})`, icon: Calendar },
+    { id: 'events', label: `Events (${safeEvents.length})`, icon: Calendar },
     { id: 'announcements', label: `Announcements (${club.announcements?.length || 0})`, icon: Megaphone },
     { id: 'google_form', label: 'Application Form', icon: FileText },
   ];
@@ -291,7 +336,10 @@ export default function ClubAdminPortal() {
               return (
                 <button
                   key={item.id}
-                  onClick={() => setActiveTab(item.id)}
+                  onClick={() => {
+                    setActiveTab(item.id);
+                    setSearchParams({ tab: item.id });
+                  }}
                   className={`w-full flex items-center gap-3 px-3 py-2 rounded-md text-xs font-semibold transition ${
                     isActive
                       ? 'bg-blue-800/80 text-white font-bold border-l-4 border-white'
@@ -838,35 +886,127 @@ export default function ClubAdminPortal() {
         {/* 5. EVENTS */}
         {activeTab === 'events' && (
           <div className="space-y-6">
-            <div className="flex justify-between items-center">
-              <h3 className="text-xl font-bold text-slate-900">Events Management</h3>
-              <button
-                onClick={() => setShowEventModal(true)}
-                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-md bg-[#173B67] hover:bg-[#122E52] text-white font-semibold text-xs shadow-2xs"
-              >
-                <Plus className="w-4 h-4" /> Create Event
-              </button>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div>
+                <h3 className="text-xl font-bold text-slate-900 tracking-tight">Organization Events Management</h3>
+                <p className="text-xs text-slate-500 mt-0.5">Manage and track events hosted by {club.name}</p>
+              </div>
+
+              <div className="flex items-center gap-3">
+                {/* Sub-tabs: Ongoing/Upcoming vs Past */}
+                <div className="flex bg-slate-200 p-1 rounded-lg">
+                  <button
+                    type="button"
+                    onClick={() => setEventTabSub('upcoming')}
+                    className={`px-3 py-1.5 rounded-md text-xs font-bold transition ${
+                      eventTabSub === 'upcoming'
+                        ? 'bg-[#173B67] text-white shadow-2xs'
+                        : 'text-slate-700 hover:text-slate-900'
+                    }`}
+                  >
+                    Ongoing & Upcoming
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setEventTabSub('past')}
+                    className={`px-3 py-1.5 rounded-md text-xs font-bold transition ${
+                      eventTabSub === 'past'
+                        ? 'bg-[#173B67] text-white shadow-2xs'
+                        : 'text-slate-700 hover:text-slate-900'
+                    }`}
+                  >
+                    Past Events
+                  </button>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => setShowEventModal(true)}
+                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-md bg-[#173B67] hover:bg-[#122E52] text-white font-semibold text-xs shadow-2xs shrink-0"
+                >
+                  <Plus className="w-4 h-4" /> Create Event
+                </button>
+              </div>
             </div>
 
-            <div className="space-y-3">
-              <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider">Scheduled Events</h4>
+            {/* Filter & Search Bar */}
+            <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-2xs flex flex-col md:flex-row gap-4 justify-between md:items-center">
+              <div className="relative flex-1">
+                <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                <input
+                  type="text"
+                  placeholder="Search club events by title or description..."
+                  value={eventSearch}
+                  onChange={(e) => setEventSearch(e.target.value)}
+                  className="w-full pl-9 pr-4 py-2 bg-slate-50 border border-slate-300 rounded-lg text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+              <div className="text-xs text-slate-600 font-medium">
+                Showing <span className="font-bold text-slate-900">{filteredEvents.length}</span> event(s)
+              </div>
+            </div>
+
+            {/* Events Grid */}
+            {filteredEvents.length === 0 ? (
+              <div className="bg-white p-12 rounded-xl border border-slate-200 text-center space-y-2">
+                <Calendar className="w-10 h-10 text-slate-300 mx-auto" />
+                <h4 className="text-sm font-bold text-slate-700">No events found</h4>
+                <p className="text-xs text-slate-500">There are no {eventTabSub} events listed for {club.name}.</p>
+              </div>
+            ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {club.upcoming_events?.map((ev) => (
-                  <div key={ev.id} className="bg-white p-4 rounded-lg border border-slate-200 flex justify-between gap-4 shadow-2xs">
-                    <div className="space-y-1">
-                      <h4 className="text-xs font-bold text-slate-900">{ev.title}</h4>
-                      <p className="text-xs text-slate-500 line-clamp-2">{ev.description}</p>
-                      <div className="text-[11px] text-slate-600 font-medium flex items-center gap-1.5 pt-1">
-                        <Clock className="w-3.5 h-3.5 text-blue-700" /> {new Date(ev.event_date).toLocaleString()}
+                {filteredEvents.map((ev) => (
+                  <div key={ev.id} className="bg-white p-4 rounded-lg border border-slate-200 flex flex-col justify-between space-y-3 shadow-2xs">
+                    <div className="space-y-2">
+                      {ev.image_url && (
+                        <img src={ev.image_url} alt={ev.title} className="w-full h-32 object-cover rounded-md" />
+                      )}
+                      <div className="flex items-center justify-between gap-2">
+                        <span className={`px-2 py-0.5 text-[10px] font-bold rounded border ${
+                          ev.is_past || new Date(ev.event_date) < new Date()
+                            ? 'bg-slate-100 text-slate-600 border-slate-200'
+                            : 'bg-emerald-50 text-emerald-800 border-emerald-200'
+                        }`}>
+                          {ev.is_past || new Date(ev.event_date) < new Date() ? 'PAST EVENT' : 'UPCOMING'}
+                        </span>
+                        <button
+                          onClick={() => handleDeleteEvent(ev.id)}
+                          className="p-1 text-slate-400 hover:text-red-600 rounded hover:bg-red-50"
+                          title="Delete Event"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
                       </div>
+
+                      <h4 className="text-sm font-bold text-slate-900">{ev.title}</h4>
+                      <p className="text-xs text-slate-600 line-clamp-2 leading-relaxed">{ev.description}</p>
                     </div>
-                    <button onClick={() => handleDeleteEvent(ev.id)} className="p-1 text-slate-400 hover:text-red-600">
-                      <Trash2 className="w-4 h-4" />
-                    </button>
+
+                    <div className="pt-2 border-t border-slate-100 space-y-1 text-[11px] text-slate-600">
+                      <div className="flex items-center gap-1.5 font-semibold text-slate-700">
+                        <Clock className="w-3.5 h-3.5 text-blue-700" /> {new Date(ev.event_date).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' })}
+                      </div>
+                      {ev.location && (
+                        <div>📍 {ev.location}</div>
+                      )}
+                      {ev.registration_url && (
+                        <div className="pt-1">
+                          <a
+                            href={ev.registration_url.startsWith('http') ? ev.registration_url : `https://${ev.registration_url}`}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="inline-flex items-center gap-1 text-blue-700 font-bold hover:underline"
+                          >
+                            <span>Registration Link</span>
+                            <ExternalLink className="w-3 h-3" />
+                          </a>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 ))}
               </div>
-            </div>
+            )}
           </div>
         )}
 
@@ -885,14 +1025,35 @@ export default function ClubAdminPortal() {
 
             <div className="space-y-3">
               {club.announcements?.map((ann) => (
-                <div key={ann.id} className="bg-white p-4 rounded-lg border border-slate-200 flex justify-between items-start gap-4 shadow-2xs">
-                  <div className="space-y-1">
-                    <h4 className="text-xs font-bold text-slate-900">{ann.title}</h4>
+                <div key={ann.id} className={`p-4 rounded-lg border flex justify-between items-start gap-4 shadow-2xs ${ann.is_pinned ? 'bg-amber-50/60 border-amber-200' : 'bg-white border-slate-200'}`}>
+                  <div className="space-y-1 flex-1">
+                    <div className="flex items-center gap-2">
+                      <h4 className="text-xs font-bold text-slate-900">{ann.title}</h4>
+                      {ann.is_pinned && (
+                        <span className="inline-flex items-center gap-1 text-[10px] font-bold text-amber-900 bg-amber-100 px-1.5 py-0.5 rounded border border-amber-300 uppercase">
+                          <Pin className="w-3 h-3 text-amber-700" /> Pinned
+                        </span>
+                      )}
+                    </div>
                     <p className="text-slate-600 text-xs leading-relaxed">{ann.content}</p>
                   </div>
-                  <button onClick={() => handleDeleteAnnouncement(ann.id)} className="p-1 text-slate-400 hover:text-red-600">
-                    <Trash2 className="w-4 h-4" />
-                  </button>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <button 
+                      onClick={() => handleTogglePinAnnouncement(ann.id)} 
+                      className={`p-1.5 rounded border text-xs font-semibold flex items-center gap-1 transition ${
+                        ann.is_pinned 
+                          ? 'bg-amber-100 text-amber-900 border-amber-300 hover:bg-amber-200' 
+                          : 'bg-slate-100 text-slate-700 border-slate-200 hover:bg-slate-200'
+                      }`}
+                      title={ann.is_pinned ? "Unpin Announcement" : "Pin Announcement"}
+                    >
+                      <Pin className={`w-3.5 h-3.5 ${ann.is_pinned ? 'fill-amber-700 text-amber-700' : 'text-slate-500'}`} />
+                      <span>{ann.is_pinned ? 'Unpin' : 'Pin'}</span>
+                    </button>
+                    <button onClick={() => handleDeleteAnnouncement(ann.id)} className="p-1 text-slate-400 hover:text-red-600" title="Delete Announcement">
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
                 </div>
               ))}
             </div>
@@ -1088,6 +1249,29 @@ export default function ClubAdminPortal() {
                   onChange={(e) => setAnnForm({ ...annForm, content: e.target.value })}
                   className="w-full px-3 py-1.5 bg-slate-50 border border-slate-300 rounded-md text-xs text-slate-900"
                 />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">Category</label>
+                <input
+                  type="text"
+                  placeholder="General, Notice, Urgent, Event..."
+                  value={annForm.category || ''}
+                  onChange={(e) => setAnnForm({ ...annForm, category: e.target.value })}
+                  className="w-full px-3 py-1.5 bg-slate-50 border border-slate-300 rounded-md text-xs text-slate-900"
+                />
+              </div>
+              <div className="flex items-center gap-2 pt-1">
+                <input
+                  type="checkbox"
+                  id="ann_is_pinned"
+                  checked={annForm.is_pinned || false}
+                  onChange={(e) => setAnnForm({ ...annForm, is_pinned: e.target.checked })}
+                  className="rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                />
+                <label htmlFor="ann_is_pinned" className="text-xs font-semibold text-slate-700 cursor-pointer flex items-center gap-1">
+                  <Pin className="w-3 h-3 text-amber-700" />
+                  Pin this announcement to top of feed
+                </label>
               </div>
               <div className="flex justify-end gap-2 pt-2">
                 <button

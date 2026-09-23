@@ -125,6 +125,7 @@ class ClubBase(BaseModel):
     instagram_url: Optional[str] = None
     linkedin_url: Optional[str] = None
     website_url: Optional[str] = None
+    is_active: Optional[bool] = True
 
 class ClubCreate(ClubBase):
     pass
@@ -141,6 +142,7 @@ class ClubUpdate(BaseModel):
     instagram_url: Optional[str] = None
     linkedin_url: Optional[str] = None
     website_url: Optional[str] = None
+    is_active: Optional[bool] = None
 
 class ClubListResponse(BaseModel):
     id: int
@@ -150,6 +152,7 @@ class ClubListResponse(BaseModel):
     logo_url: Optional[str] = None
     cover_url: Optional[str] = None
     google_form_url: str
+    is_active: bool = True
     saved_count: int = 0
     is_saved: bool = False
     events_count: int = 0
@@ -216,12 +219,14 @@ class AdminStats(BaseModel):
 
 # Announcement Schemas
 class AnnouncementCreate(BaseModel):
+    club_id: Optional[int] = None
     title: str
     content: str
     category: Optional[str] = "General"
     is_pinned: Optional[bool] = False
 
 class AnnouncementUpdate(BaseModel):
+    club_id: Optional[int] = None
     title: Optional[str] = None
     content: Optional[str] = None
     category: Optional[str] = None
@@ -229,8 +234,8 @@ class AnnouncementUpdate(BaseModel):
 
 class AnnouncementResponse(BaseModel):
     id: int
-    club_id: int
-    club_name: str
+    club_id: Optional[int] = None
+    club_name: Optional[str] = "Campus News"
     club_logo: Optional[str] = None
     title: str
     content: str

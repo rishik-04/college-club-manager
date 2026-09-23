@@ -17,7 +17,7 @@ def get_admin_stats(
     db: Session = Depends(get_db),
     admin: User = Depends(require_roles(["SUPER_ADMIN", "CLUB_ADMIN"]))
 ):
-    total_clubs = db.query(Club).count()
+    total_clubs = db.query(Club).filter(Club.is_active == True).count()
     total_students = db.query(User).filter(User.role == "STUDENT").count()
     total_events = db.query(Event).count()
     total_memberships = db.query(ClubMembership).count()

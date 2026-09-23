@@ -37,26 +37,32 @@ def recommend_clubs(
         saved_club_ids = {s.club_id for s in db.query(SavedClub.club_id).filter(SavedClub.user_id == current_user.id).all()}
 
     for c in clubs:
+        if c.is_active is False:
+            continue
+
         text_corpus = f"{c.name} {c.category} {c.description} {c.eligibility} {c.outcomes}".lower()
         score = 0
         matched_reasons = []
 
         if not user_tokens:
-            # Baseline score if no interests given
             score = 65
-            matched_reasons.append(f"Popular {c.category} club on campus")
+            matched_reasons.append(f"Popular {c.category} organization on campus")
+            matched_reasons.append("Complete your preferences to get more personalized recommendations.")
         else:
             for token in user_tokens:
                 if token in c.category.lower():
                     score += 25
-                    matched_reasons.append(f"Category matches '{token.title()}'")
+                    matched_reasons.append(f"Matches your interest in {token.title()}")
                 elif token in c.name.lower():
                     score += 25
-                    matched_reasons.append(f"Club focus explicitly centers around '{token}'")
+                    matched_reasons.append(f"Matches your interest in {token.title()}")
                 elif token in text_corpus:
                     count = text_corpus.count(token)
                     score += min(count * 8, 20)
-                    matched_reasons.append(f"Mentioned skills & outcomes include '{token}'")
+                    matched_reasons.append(f"Aligns with your preference for {token}")
+
+            if not matched_reasons:
+                matched_reasons.append("Recommended based on your selected preferences.")
 
         # Category bonus or saved club category synergy
         if c.id in saved_club_ids:
@@ -77,6 +83,7 @@ def recommend_clubs(
             logo_url=c.logo_url,
             cover_url=c.cover_url,
             google_form_url=c.google_form_url,
+            is_active=c.is_active if c.is_active is not None else True,
             saved_count=saved_count,
             is_saved=(c.id in saved_club_ids),
             events_count=events_count

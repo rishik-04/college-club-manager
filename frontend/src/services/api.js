@@ -60,10 +60,11 @@ export const api = {
 
   // Clubs
   clubs: {
-    getAll: async ({ search = '', category = '' } = {}) => {
+    getAll: async ({ search = '', category = '', include_inactive = false } = {}) => {
       const params = new URLSearchParams();
       if (search) params.append('search', search);
       if (category && category !== 'All') params.append('category', category);
+      if (include_inactive) params.append('include_inactive', 'true');
       const res = await fetch(`${API_BASE}/clubs?${params.toString()}`, {
         headers: { ...getAuthHeader() },
       });
@@ -94,6 +95,17 @@ export const api = {
           ...getAuthHeader(),
         },
         body: JSON.stringify(data),
+      });
+      return handleResponse(res);
+    },
+    updateStatus: async (id, isActive) => {
+      const res = await fetch(`${API_BASE}/clubs/${id}/status`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          ...getAuthHeader(),
+        },
+        body: JSON.stringify({ is_active: Boolean(isActive) }),
       });
       return handleResponse(res);
     },
@@ -259,13 +271,15 @@ export const api = {
       return handleResponse(res);
     },
     create: async (clubId, annData) => {
-      const res = await fetch(`${API_BASE}/clubs/${clubId}/announcements`, {
+      const url = clubId ? `${API_BASE}/clubs/${clubId}/announcements` : `${API_BASE}/announcements`;
+      const bodyData = clubId ? annData : { ...annData, club_id: annData?.club_id || null };
+      const res = await fetch(url, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           ...getAuthHeader(),
         },
-        body: JSON.stringify(annData),
+        body: JSON.stringify(bodyData),
       });
       return handleResponse(res);
     },
@@ -277,6 +291,13 @@ export const api = {
           ...getAuthHeader(),
         },
         body: JSON.stringify(annData),
+      });
+      return handleResponse(res);
+    },
+    togglePin: async (id) => {
+      const res = await fetch(`${API_BASE}/announcements/${id}/pin`, {
+        method: 'PUT',
+        headers: { ...getAuthHeader() },
       });
       return handleResponse(res);
     },

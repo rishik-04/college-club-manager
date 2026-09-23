@@ -66,6 +66,12 @@ export default function ClubDetailModal({
     if (onToggleSave) onToggleSave(club.id);
   };
 
+  const handleGoogleFormRegistration = (url) => {
+    if (!url) return;
+    const targetUrl = url.startsWith('http://') || url.startsWith('https://') ? url : `https://${url}`;
+    window.open(targetUrl, '_blank', 'noopener,noreferrer');
+  };
+
   if (!clubId) return null;
 
   const now = new Date();
@@ -120,16 +126,18 @@ export default function ClubDetailModal({
             </div>
 
             {/* Profile Info Header */}
-            <div className="px-6 sm:px-8 pb-3 border-b border-slate-200">
+            <div className="px-6 sm:px-8 pb-4 border-b border-slate-200 relative z-10">
               <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
                 <div className="flex items-end gap-4">
-                  <ClubLogo
-                    src={club.logo_url}
-                    name={club.name}
-                    className="w-20 h-20 -mt-10 sm:-mt-12 rounded-lg object-cover border-4 border-white bg-white shrink-0 shadow-md text-lg"
-                  />
-                  <div className="pt-2">
-                    <h2 className="text-2xl font-bold text-slate-900 leading-tight">
+                  <div className="relative z-10 -mt-10 sm:-mt-12 shrink-0">
+                    <ClubLogo
+                      src={club.logo_url}
+                      name={club.name}
+                      className="w-20 h-20 sm:w-24 sm:h-24 rounded-xl object-cover border-4 border-white bg-white shadow-md text-lg"
+                    />
+                  </div>
+                  <div className="pt-2 sm:pt-0">
+                    <h2 className="text-xl sm:text-2xl font-bold text-slate-900 leading-tight">
                       {club.name}
                     </h2>
                     <div className="flex items-center gap-2 mt-1 text-xs text-slate-500">
@@ -153,12 +161,12 @@ export default function ClubDetailModal({
                     <span>{isSaved ? 'Saved' : 'Save Club'}</span>
                   </button>
 
-                  {club.google_form_url && (
+                  {club.google_form_url && club.google_form_url.trim() !== '' && (
                     <button
                       onClick={() => handleGoogleFormRegistration(club.google_form_url)}
                       className="px-4 py-2 rounded-md text-xs font-semibold text-white bg-[#173B67] hover:bg-[#122E52] transition shadow-2xs flex items-center gap-1.5"
                     >
-                      <span>Application Form</span>
+                      <span>Register / Apply Now</span>
                       <ExternalLink className="w-3.5 h-3.5" />
                     </button>
                   )}
@@ -284,7 +292,7 @@ export default function ClubDetailModal({
                       </div>
                     </div>
 
-                    {club.google_form_url && (
+                    {club.google_form_url && club.google_form_url.trim() !== '' && (
                       <div className="p-4 bg-blue-50 rounded-lg border border-blue-200 text-center space-y-2">
                         <h4 className="text-xs font-bold text-blue-900 uppercase tracking-wider">Membership Form</h4>
                         <p className="text-xs text-blue-800">Submit your registration via Google Form.</p>
@@ -292,7 +300,7 @@ export default function ClubDetailModal({
                           onClick={() => handleGoogleFormRegistration(club.google_form_url)}
                           className="inline-flex items-center justify-center gap-1.5 px-4 py-2 bg-[#CC0000] hover:bg-[#B30000] text-white rounded-md text-xs font-bold uppercase tracking-wider shadow-xs w-full mt-1"
                         >
-                          <span>Apply Now</span>
+                          <span>Register / Apply Now</span>
                           <ExternalLink className="w-3.5 h-3.5" />
                         </button>
                       </div>

@@ -33,10 +33,15 @@ router = APIRouter(prefix="/api/clubs", tags=["Clubs"])
 def get_clubs(
     search: Optional[str] = Query(None, description="Search by club name or keywords"),
     category: Optional[str] = Query(None, description="Filter by club category"),
+    include_inactive: Optional[bool] = Query(False, description="Include inactive clubs"),
     db: Session = Depends(get_db),
     current_user: Optional[User] = Depends(get_optional_current_user)
 ):
     query = db.query(Club)
+
+    is_super_admin = current_user and current_user.role == "SUPER_ADMIN"
+    if not include_inactive and not is_super_admin:
+        query = query.filter(Club.is_active == True)
 
     if category and category.lower() != "all":
         query = query.filter(Club.category.ilike(category))
@@ -83,6 +88,7 @@ def get_clubs(
                 logo_url=c.logo_url,
                 cover_url=c.cover_url,
                 google_form_url=c.google_form_url,
+                is_active=c.is_active if c.is_active is not None else True,
                 saved_count=saved_count,
                 is_saved=(c.id in saved_club_ids),
                 events_count=events_count,
@@ -202,6 +208,12 @@ def update_club(
     if not club:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Club not found.")
 
+    if club_in.is_active is not None and admin.role != "SUPER_ADMIN":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only Super Admin can activate or deactivate clubs."
+        )
+
     update_data = club_in.dict(exclude_unset=True)
     for key, value in update_data.items():
         setattr(club, key, value)
@@ -211,6 +223,25 @@ def update_club(
     db.refresh(club)
 
     return get_club_details(club_id=club.id, db=db, current_user=admin)
+
+@router.patch("/{club_id}/status")
+def update_club_status(
+    club_id: int,
+    status_in: dict,
+    db: Session = Depends(get_db),
+    admin: User = Depends(require_roles(["SUPER_ADMIN"]))
+):
+    club = db.query(Club).filter(Club.id == club_id).first()
+    if not club:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Club not found.")
+
+    if "is_active" in status_in:
+        club.is_active = bool(status_in["is_active"])
+        club.updated_at = datetime.datetime.utcnow()
+        db.commit()
+        db.refresh(club)
+
+    return {"id": club.id, "name": club.name, "is_active": club.is_active}
 
 @router.delete("/{club_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_club(

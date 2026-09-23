@@ -119,6 +119,13 @@ export default function RecommendationModal({ onSelectClub }) {
               const { club, match_score, reasons } = item;
               const matchText = match_score >= 70 ? 'Strong match' : match_score >= 40 ? 'Good match' : 'Potential match';
 
+              const rawReasons = reasons || item.match_reasons || item.why_match || [];
+              const safeReasons = (rawReasons && rawReasons.length > 0)
+                ? rawReasons
+                : (selectedInterests.length > 0
+                    ? ["Recommended based on your selected preferences."]
+                    : ["Complete your preferences to get more personalized recommendations."]);
+
               return (
                 <div
                   key={club.id}
@@ -151,7 +158,7 @@ export default function RecommendationModal({ onSelectClub }) {
                       <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">
                         Why this matches:
                       </span>
-                      {reasons.map((r, i) => (
+                      {safeReasons.map((r, i) => (
                         <div key={i} className="text-xs text-slate-700 flex items-center gap-1.5 font-medium">
                           <span className="text-emerald-700 font-bold">✓</span>
                           <span>{r}</span>
