@@ -2,13 +2,13 @@ from typing import List
 import datetime
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
-from sqlalchemy import func
+from sqlalchemy import func, or_
 from sqlalchemy.exc import IntegrityError
 
 from ..database import get_db
 from ..models import Club, User, ClubMembership
 from ..schemas import ClubAnalyticsResponse, DemographicsDistribution, ClubMemberResponse, ClubMembershipCreate, BranchTree, YearTree, SectionCount, ClubDetailResponse
-from ..auth import require_roles, get_current_user
+from ..auth import require_roles, get_current_user, hash_password
 from .club_routes import check_club_permission, get_club_details
 
 router = APIRouter(prefix="/api/clubs", tags=["Club Memberships & Demographics Analytics"])
@@ -235,9 +235,70 @@ def add_club_member(
     if not club:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Club not found.")
 
-    student = db.query(User).filter(User.id == payload.student_id).first()
+    student = None
+
+    # Option A: student_id provided
+    if payload.student_id:
+        student = db.query(User).filter(User.id == payload.student_id).first()
+
+    # Option B: email or roll_number provided
+    if not student and (payload.email or payload.roll_number):
+        filters = []
+        if payload.email:
+            filters.append(User.email.ilike(payload.email.strip()))
+        if payload.roll_number:
+            filters.append(User.roll_number == payload.roll_number.strip())
+        
+        if filters:
+            student = db.query(User).filter(or_(*filters)).first()
+
+    # If student exists, update profile fields if provided and currently empty
+    if student:
+        updated = False
+        if payload.roll_number and not student.roll_number:
+            student.roll_number = payload.roll_number
+            updated = True
+        if payload.branch and not student.branch:
+            student.branch = payload.branch
+            updated = True
+        if payload.year and not student.year:
+            student.year = payload.year
+            updated = True
+        if payload.section and not student.section:
+            student.section = payload.section
+            updated = True
+        if updated:
+            db.commit()
+            db.refresh(student)
+    else:
+        # Create new student user
+        if not payload.name or not payload.email:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Student name and email are required to create a new member."
+            )
+        
+        default_pw_hash = hash_password("student123")
+        student = User(
+            name=payload.name.strip(),
+            email=payload.email.strip().lower(),
+            password_hash=default_pw_hash,
+            role="STUDENT",
+            roll_number=payload.roll_number.strip() if payload.roll_number else None,
+            branch=payload.branch.strip() if payload.branch else "CSE",
+            year=payload.year.strip() if payload.year else "1st Year",
+            section=payload.section.strip() if payload.section else "A"
+        )
+        db.add(student)
+        try:
+            db.commit()
+            db.refresh(student)
+        except IntegrityError:
+            db.rollback()
+            student = db.query(User).filter(User.email == payload.email.strip().lower()).first()
+
     if not student:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Student not found.")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Student could not be created or found.")
 
     # Check for existing membership
     existing = db.query(ClubMembership).filter(

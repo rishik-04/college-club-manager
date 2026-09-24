@@ -88,6 +88,7 @@ export default function SuperAdminPortal() {
   // Filters
   const [clubSearch, setClubSearch] = useState('');
   const [userSearch, setUserSearch] = useState('');
+  const [userClubFilter, setUserClubFilter] = useState('All');
   const [userBranchFilter, setUserBranchFilter] = useState('All');
   const [userYearFilter, setUserYearFilter] = useState('All');
   const [userSectionFilter, setUserSectionFilter] = useState('All');
@@ -285,8 +286,9 @@ export default function SuperAdminPortal() {
     const matchesBranch = userBranchFilter === 'All' || (u.branch && u.branch.toLowerCase().includes(userBranchFilter.toLowerCase()));
     const matchesYear = userYearFilter === 'All' || (u.year && u.year.toLowerCase().includes(userYearFilter.toLowerCase()));
     const matchesSection = userSectionFilter === 'All' || (u.section && u.section.toLowerCase().includes(userSectionFilter.toLowerCase()));
+    const matchesClub = userClubFilter === 'All' || (u.enrolled_club_ids && u.enrolled_club_ids.includes(Number(userClubFilter)));
 
-    return matchesSearch && matchesBranch && matchesYear && matchesSection;
+    return matchesSearch && matchesBranch && matchesYear && matchesSection && matchesClub;
   });
 
   const safeAnnouncements = Array.isArray(announcements) ? announcements : [];
@@ -541,27 +543,32 @@ export default function SuperAdminPortal() {
                   <span className="text-xs text-slate-500 font-medium">Click club for drill-down</span>
                 </div>
                 <div className="divide-y divide-slate-100 max-h-72 overflow-y-auto">
-                  {clubWiseMem.map((item) => (
-                    <div
-                      key={item.club_id}
-                      onClick={() => handleOpenDemographics(item.club_id)}
-                      className="py-2.5 px-2 flex justify-between items-center hover:bg-slate-50 cursor-pointer rounded transition"
-                    >
-                      <div className="flex items-center gap-2.5">
-                        <ClubLogo src={item.logo_url} name={item.club_name} className="w-7 h-7 rounded border border-slate-200 object-cover" />
-                        <div>
-                          <span className="text-xs font-bold text-slate-900 block">{item.club_name}</span>
-                          <span className="text-[10px] text-slate-500">{item.category}</span>
+                  {clubWiseMem.map((item) => {
+                    const displayName = item.club_name || item.name || 'Organization';
+                    const displayCategory = item.category || 'Club';
+                    const displayMembers = item.total_members ?? item.members ?? 0;
+                    return (
+                      <div
+                        key={item.club_id}
+                        onClick={() => handleOpenDemographics(item.club_id)}
+                        className="py-2.5 px-2 flex justify-between items-center hover:bg-slate-50 cursor-pointer rounded transition"
+                      >
+                        <div className="flex items-center gap-2.5">
+                          <ClubLogo src={item.logo_url} name={displayName} className="w-7 h-7 rounded border border-slate-200 object-cover" />
+                          <div>
+                            <span className="text-xs font-bold text-slate-900 block">{displayName}</span>
+                            <span className="text-[10px] text-slate-500">{displayCategory}</span>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <span className="text-xs font-bold text-blue-900 bg-blue-50 px-2 py-0.5 rounded border border-blue-200">
+                            {displayMembers} Members
+                          </span>
+                          <ExternalLink className="w-3.5 h-3.5 text-slate-400" />
                         </div>
                       </div>
-                      <div className="flex items-center gap-3">
-                        <span className="text-xs font-bold text-blue-900 bg-blue-50 px-2 py-0.5 rounded border border-blue-200">
-                          {item.total_members} Members
-                        </span>
-                        <ExternalLink className="w-3.5 h-3.5 text-slate-400" />
-                      </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
             </div>
@@ -780,8 +787,8 @@ export default function SuperAdminPortal() {
             </div>
 
             {/* Multi-filter Bar */}
-            <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-2xs grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-              <div className="relative">
+            <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-2xs flex flex-wrap lg:flex-nowrap gap-3 items-center">
+              <div className="relative flex-1 min-w-[200px]">
                 <Search className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
                 <input
                   type="text"
@@ -792,7 +799,22 @@ export default function SuperAdminPortal() {
                 />
               </div>
 
-              <div>
+              <div className="w-full sm:w-44">
+                <select
+                  value={userClubFilter}
+                  onChange={(e) => setUserClubFilter(e.target.value)}
+                  className="w-full px-3 py-1.5 bg-slate-50 border border-slate-300 rounded-md text-xs text-slate-900 focus:outline-none focus:border-[#173B67]"
+                >
+                  <option value="All">All Clubs</option>
+                  {clubs.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="w-full sm:w-36">
                 <select
                   value={userBranchFilter}
                   onChange={(e) => setUserBranchFilter(e.target.value)}
@@ -808,7 +830,7 @@ export default function SuperAdminPortal() {
                 </select>
               </div>
 
-              <div>
+              <div className="w-full sm:w-36">
                 <select
                   value={userYearFilter}
                   onChange={(e) => setUserYearFilter(e.target.value)}
@@ -822,7 +844,7 @@ export default function SuperAdminPortal() {
                 </select>
               </div>
 
-              <div>
+              <div className="w-full sm:w-32">
                 <select
                   value={userSectionFilter}
                   onChange={(e) => setUserSectionFilter(e.target.value)}
@@ -835,6 +857,20 @@ export default function SuperAdminPortal() {
                   <option value="D">Section D</option>
                 </select>
               </div>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setUserSearch('');
+                  setUserClubFilter('All');
+                  setUserBranchFilter('All');
+                  setUserYearFilter('All');
+                  setUserSectionFilter('All');
+                }}
+                className="px-3.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-md text-xs border border-slate-200 transition shrink-0"
+              >
+                Clear Filters
+              </button>
             </div>
 
             {/* Students Table */}

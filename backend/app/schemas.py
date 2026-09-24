@@ -28,6 +28,7 @@ class UserResponse(BaseModel):
     year: Optional[str] = None
     section: Optional[str] = None
     interests: Optional[str] = None
+    enrolled_club_ids: Optional[List[int]] = []
     assigned_club_id: Optional[int] = None
     assigned_club_name: Optional[str] = None
     created_at: datetime.datetime
@@ -246,9 +247,14 @@ class AnnouncementResponse(BaseModel):
     class Config:
         from_attributes = True
 
-# Club Membership & Demographics Schemas
 class ClubMembershipCreate(BaseModel):
-    student_id: int
+    student_id: Optional[int] = None
+    name: Optional[str] = None
+    email: Optional[EmailStr] = None
+    roll_number: Optional[str] = None
+    branch: Optional[str] = None
+    year: Optional[str] = None
+    section: Optional[str] = None
 
 class ClubMemberResponse(BaseModel):
     id: int

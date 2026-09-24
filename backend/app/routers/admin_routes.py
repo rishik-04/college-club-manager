@@ -75,14 +75,23 @@ def get_admin_stats(
 
     # Club-wise Membership
     club_counts = (
-        db.query(Club.id, Club.name, func.count(ClubMembership.id).label("m_count"))
+        db.query(Club.id, Club.name, Club.category, Club.logo_url, func.count(ClubMembership.id).label("m_count"))
         .outerjoin(ClubMembership, Club.id == ClubMembership.club_id)
+        .filter(Club.is_active == True)
         .group_by(Club.id)
         .order_by(func.count(ClubMembership.id).desc())
         .all()
     )
     club_wise_membership = [
-        {"club_id": c[0], "name": c[1], "members": c[2]}
+        {
+            "club_id": c[0],
+            "name": c[1],
+            "club_name": c[1],
+            "category": c[2],
+            "logo_url": c[3],
+            "members": c[4],
+            "total_members": c[4]
+        }
         for c in club_counts
     ]
 
@@ -116,15 +125,21 @@ def get_all_users(
                 if c:
                     assigned_id = c.id
                     assigned_name = c.name
+        
+        enrolled_ids = [m.club_id for m in u.club_memberships] if hasattr(u, 'club_memberships') and u.club_memberships else []
+
         results.append(
             UserResponse(
                 id=u.id,
                 name=u.name,
                 email=u.email,
                 role=u.role,
+                roll_number=u.roll_number,
                 branch=u.branch,
                 year=u.year,
+                section=u.section,
                 interests=u.interests,
+                enrolled_club_ids=enrolled_ids,
                 assigned_club_id=assigned_id,
                 assigned_club_name=assigned_name,
                 created_at=u.created_at

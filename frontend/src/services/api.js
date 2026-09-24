@@ -175,14 +175,15 @@ export const api = {
       });
       return handleResponse(res);
     },
-    addMember: async (clubId, studentId) => {
+    addMember: async (clubId, memberData) => {
+      const payload = typeof memberData === 'object' ? memberData : { student_id: Number(memberData) };
       const res = await fetch(`${API_BASE}/clubs/${clubId}/members`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           ...getAuthHeader(),
         },
-        body: JSON.stringify({ student_id: Number(studentId) }),
+        body: JSON.stringify(payload),
       });
       return handleResponse(res);
     },

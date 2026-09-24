@@ -19,7 +19,8 @@ import {
   Award,
   Home,
   FileText,
-  Pin
+  Pin,
+  X
 } from 'lucide-react';
 
 export default function ClubAdminPortal() {
@@ -61,6 +62,16 @@ export default function ClubAdminPortal() {
   });
 
   // Modal / Add states
+  const [showAddMemberModal, setShowAddMemberModal] = useState(false);
+  const [addMemberForm, setAddMemberForm] = useState({
+    name: '',
+    email: '',
+    roll_number: '',
+    branch: 'CSE',
+    year: '1st Year',
+    section: 'A'
+  });
+
   const [showBoardModal, setShowBoardModal] = useState(false);
   const [boardForm, setBoardForm] = useState({ name: '', position: '', photo_url: '', email: '', linkedin_url: '' });
   const [editingBoardId, setEditingBoardId] = useState(null);
@@ -220,16 +231,20 @@ export default function ClubAdminPortal() {
     }
   };
 
-  const handleAddMember = async (e) => {
+  const handleAddMemberSubmit = async (e) => {
     e.preventDefault();
-    if (!newStudentId) return;
+    if (!addMemberForm.name || !addMemberForm.email) {
+      showFeedback('Please provide both Student Name and Email Address.', true);
+      return;
+    }
     try {
-      await api.clubs.addMember(club.id, Number(newStudentId));
-      showFeedback('Student added to club roster!');
-      setNewStudentId('');
+      await api.clubs.addMember(club.id, addMemberForm);
+      showFeedback('Student member added successfully!');
+      setShowAddMemberModal(false);
+      setAddMemberForm({ name: '', email: '', roll_number: '', branch: 'CSE', year: '1st Year', section: 'A' });
       loadMyClub();
     } catch (err) {
-      showFeedback(err.message, true);
+      showFeedback(err.message || 'Failed to add member to roster', true);
     }
   };
 
@@ -729,28 +744,20 @@ export default function ClubAdminPortal() {
         {activeTab === 'members' && (
           <div className="space-y-6">
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-              <h3 className="text-xl font-bold text-slate-900">Club Members Roster ({safeMembers.length})</h3>
+              <h3 className="text-xl font-bold text-slate-900">Club Members Roster ({filteredMembers.length})</h3>
 
-              <form onSubmit={handleAddMember} className="flex gap-2 w-full md:w-auto">
-                <input
-                  type="number"
-                  placeholder="Student User ID..."
-                  value={newStudentId}
-                  onChange={(e) => setNewStudentId(e.target.value)}
-                  className="px-3 py-1.5 bg-white border border-slate-300 rounded-md text-xs text-slate-900 focus:outline-none focus:border-[#173B67] w-36"
-                />
-                <button
-                  type="submit"
-                  className="px-3.5 py-1.5 bg-[#173B67] hover:bg-[#122E52] text-white font-semibold rounded-md text-xs flex items-center gap-1.5 shadow-2xs"
-                >
-                  <UserPlus className="w-4 h-4" /> Add Member
-                </button>
-              </form>
+              <button
+                type="button"
+                onClick={() => setShowAddMemberModal(true)}
+                className="px-4 py-2 bg-[#173B67] hover:bg-[#122E52] text-white font-semibold rounded-md text-xs flex items-center gap-1.5 shadow-2xs"
+              >
+                <UserPlus className="w-4 h-4" /> Add Member
+              </button>
             </div>
 
             {/* Filter Bar */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              <div className="relative">
+            <div className="flex flex-wrap sm:flex-nowrap gap-3 items-center">
+              <div className="relative flex-1 min-w-[200px]">
                 <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
                 <input
                   type="text"
@@ -761,30 +768,46 @@ export default function ClubAdminPortal() {
                 />
               </div>
 
-              <select
-                value={yearFilter}
-                onChange={(e) => setYearFilter(e.target.value)}
-                className="px-3 py-2 bg-white border border-slate-300 rounded-md text-xs text-slate-900 focus:outline-none focus:border-[#173B67]"
-              >
-                <option value="All">All Years</option>
-                <option value="1st Year">1st Year</option>
-                <option value="2nd Year">2nd Year</option>
-                <option value="3rd Year">3rd Year</option>
-                <option value="4th Year">4th Year</option>
-              </select>
+              <div className="w-full sm:w-40">
+                <select
+                  value={yearFilter}
+                  onChange={(e) => setYearFilter(e.target.value)}
+                  className="w-full px-3 py-2 bg-white border border-slate-300 rounded-md text-xs text-slate-900 focus:outline-none focus:border-[#173B67]"
+                >
+                  <option value="All">All Years</option>
+                  <option value="1st Year">1st Year</option>
+                  <option value="2nd Year">2nd Year</option>
+                  <option value="3rd Year">3rd Year</option>
+                  <option value="4th Year">4th Year</option>
+                </select>
+              </div>
 
-              <select
-                value={branchFilter}
-                onChange={(e) => setBranchFilter(e.target.value)}
-                className="px-3 py-2 bg-white border border-slate-300 rounded-md text-xs text-slate-900 focus:outline-none focus:border-[#173B67]"
+              <div className="w-full sm:w-44">
+                <select
+                  value={branchFilter}
+                  onChange={(e) => setBranchFilter(e.target.value)}
+                  className="w-full px-3 py-2 bg-white border border-slate-300 rounded-md text-xs text-slate-900 focus:outline-none focus:border-[#173B67]"
+                >
+                  <option value="All">All Branches</option>
+                  <option value="Computer Science">CSE</option>
+                  <option value="Data Science">Data Science</option>
+                  <option value="Electronics">ECE</option>
+                  <option value="Electrical">EEE</option>
+                  <option value="Mechanical">Mechanical</option>
+                </select>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setMemberSearch('');
+                  setYearFilter('All');
+                  setBranchFilter('All');
+                }}
+                className="px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-md text-xs border border-slate-200 transition shrink-0"
               >
-                <option value="All">All Branches</option>
-                <option value="Computer Science">CSE</option>
-                <option value="Data Science">Data Science</option>
-                <option value="Electronics">ECE</option>
-                <option value="Electrical">EEE</option>
-                <option value="Mechanical">Mechanical</option>
-              </select>
+                Clear Filters
+              </button>
             </div>
 
             {/* Table */}
@@ -1286,6 +1309,119 @@ export default function ClubAdminPortal() {
                   className="px-3.5 py-1.5 bg-[#173B67] text-white rounded-md text-xs font-semibold hover:bg-[#122E52]"
                 >
                   Post Announcement
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Add Student Member Modal */}
+      {showAddMemberModal && (
+        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-2xs flex items-center justify-center p-4 z-50">
+          <div className="bg-white border border-slate-200 p-6 rounded-xl max-w-md w-full space-y-4 shadow-xl">
+            <div className="flex justify-between items-center border-b border-slate-100 pb-3">
+              <h4 className="text-base font-bold text-slate-900">Add Student Member</h4>
+              <button onClick={() => setShowAddMemberModal(false)} className="p-1 text-slate-400 hover:text-slate-700">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <form onSubmit={handleAddMemberSubmit} className="space-y-3">
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">Student Name *</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="Full Name"
+                  value={addMemberForm.name}
+                  onChange={(e) => setAddMemberForm({ ...addMemberForm, name: e.target.value })}
+                  className="w-full px-3 py-1.5 bg-slate-50 border border-slate-300 rounded-md text-xs text-slate-900 focus:outline-none focus:border-[#173B67]"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">Email Address *</label>
+                <input
+                  type="email"
+                  required
+                  placeholder="student@utah.edu"
+                  value={addMemberForm.email}
+                  onChange={(e) => setAddMemberForm({ ...addMemberForm, email: e.target.value })}
+                  className="w-full px-3 py-1.5 bg-slate-50 border border-slate-300 rounded-md text-xs text-slate-900 focus:outline-none focus:border-[#173B67]"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">Roll Number / Student ID</label>
+                <input
+                  type="text"
+                  placeholder="2101A0501"
+                  value={addMemberForm.roll_number}
+                  onChange={(e) => setAddMemberForm({ ...addMemberForm, roll_number: e.target.value })}
+                  className="w-full px-3 py-1.5 bg-slate-50 border border-slate-300 rounded-md text-xs text-slate-900 focus:outline-none focus:border-[#173B67]"
+                />
+              </div>
+
+              <div className="grid grid-cols-3 gap-2">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">Branch</label>
+                  <select
+                    value={addMemberForm.branch}
+                    onChange={(e) => setAddMemberForm({ ...addMemberForm, branch: e.target.value })}
+                    className="w-full px-2 py-1.5 bg-slate-50 border border-slate-300 rounded-md text-xs text-slate-900 focus:outline-none focus:border-[#173B67]"
+                  >
+                    <option value="CSE">CSE</option>
+                    <option value="Data Science">Data Science</option>
+                    <option value="ECE">ECE</option>
+                    <option value="EEE">EEE</option>
+                    <option value="Mechanical">Mechanical</option>
+                    <option value="Civil">Civil</option>
+                    <option value="IT">IT</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">Year</label>
+                  <select
+                    value={addMemberForm.year}
+                    onChange={(e) => setAddMemberForm({ ...addMemberForm, year: e.target.value })}
+                    className="w-full px-2 py-1.5 bg-slate-50 border border-slate-300 rounded-md text-xs text-slate-900 focus:outline-none focus:border-[#173B67]"
+                  >
+                    <option value="1st Year">1st Year</option>
+                    <option value="2nd Year">2nd Year</option>
+                    <option value="3rd Year">3rd Year</option>
+                    <option value="4th Year">4th Year</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">Section</label>
+                  <select
+                    value={addMemberForm.section}
+                    onChange={(e) => setAddMemberForm({ ...addMemberForm, section: e.target.value })}
+                    className="w-full px-2 py-1.5 bg-slate-50 border border-slate-300 rounded-md text-xs text-slate-900 focus:outline-none focus:border-[#173B67]"
+                  >
+                    <option value="A">Section A</option>
+                    <option value="B">Section B</option>
+                    <option value="C">Section C</option>
+                    <option value="D">Section D</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="flex justify-end gap-2 pt-3 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => setShowAddMemberModal(false)}
+                  className="px-3.5 py-1.5 bg-slate-100 text-slate-700 rounded-md text-xs font-semibold hover:bg-slate-200"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-1.5 bg-[#173B67] text-white rounded-md text-xs font-semibold hover:bg-[#122E52]"
+                >
+                  Add Student Member
                 </button>
               </div>
             </form>
